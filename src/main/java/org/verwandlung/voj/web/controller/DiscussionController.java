@@ -64,10 +64,9 @@ import java.util.Map;
 
 /**
  * 处理讨论的相关请求.
- * 
- * @author Haozhe Xie
+ *
  */
-@Controller
+@RestController
 @RequestMapping(value="/discussion")
 public class DiscussionController {
 	/**

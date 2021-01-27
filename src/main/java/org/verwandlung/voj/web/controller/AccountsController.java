@@ -15,24 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
- *                              _ooOoo_  
- *                             o8888888o  
- *                             88" . "88  
- *                             (| -_- |)  
- *                             O\  =  /O  
- *                          ____/`---'\____  
- *                        .'  \\|     |//  `.  
- *                       /  \\|||  :  |||//  \  
- *                      /  _||||| -:- |||||-  \  
- *                      |   | \\\  -  /// |   |  
- *                      | \_|  ''\---/''  |   |  
- *                      \  .-\__  `-`  ___/-. /  
- *                    ___`. .'  /--.--\  `. . __  
- *                 ."" '<  `.___\_<|>_/___.'  >'"".  
- *                | | :  `- \`.;`\ _ /`;.`/ - ` : | |  
- *                \  \ `-.   \_ __\ /__ _/   .-` /  /  
- *           ======`-.____`-.___\_____/___.-`____.-'======  
- *                              `=---=' 
+ *                              _ooOoo_
+ *                             o8888888o
+ *                             88" . "88
+ *                             (| -_- |)
+ *                             O\  =  /O
+ *                          ____/`---'\____
+ *                        .'  \\|     |//  `.
+ *                       /  \\|||  :  |||//  \
+ *                      /  _||||| -:- |||||-  \
+ *                      |   | \\\  -  /// |   |
+ *                      | \_|  ''\---/''  |   |
+ *                      \  .-\__  `-`  ___/-. /
+ *                    ___`. .'  /--.--\  `. . __
+ *                 ."" '<  `.___\_<|>_/___.'  >'"".
+ *                | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+ *                \  \ `-.   \_ __\ /__ _/   .-` /  /
+ *           ======`-.____`-.___\_____/___.-`____.-'======
+ *                              `=---='
  *
  *                          HERE BE BUDDHA
  *
@@ -49,6 +49,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,11 +60,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ResourceUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -72,50 +72,41 @@ import org.verwandlung.voj.web.service.LanguageService;
 import org.verwandlung.voj.web.service.OptionService;
 import org.verwandlung.voj.web.service.SubmissionService;
 import org.verwandlung.voj.web.service.UserService;
-import org.verwandlung.voj.web.util.CsrfProtector;
-import org.verwandlung.voj.web.util.DateUtils;
-import org.verwandlung.voj.web.util.HttpRequestParser;
-import org.verwandlung.voj.web.util.HttpSessionParser;
+import org.verwandlung.voj.web.util.*;
 
 /**
  * 处理用户的登录/注册请求.
- * 
- * @author Haozhe Xie
+ *
  */
-@Controller
+@Api(tags = "处理用户的登录/注册请求.")
+@RestController
 @RequestMapping(value="/accounts")
 public class AccountsController {
 	/**
 	 * 显示用户的登录页面.
 	 * @param isLogout - 是否处于登出状态
-	 * @param forwardUrl - 登录后跳转的地址(相对路径)
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpResponse对象
-	 * @return 包含登录页面信息的ModelAndView对象
+	 * @return 登录信息
 	 */
-	@RequestMapping(value="/login", method=RequestMethod.GET)
-	public ModelAndView loginView(
-			@RequestParam(value="logout", required=false, defaultValue="false") boolean isLogout,
-			@RequestParam(value="forward", required=false, defaultValue="") String forwardUrl,
+	@ApiOperation(value = "用户登录信息查询",notes = "msg为log表示需要登录，为logged表示已登录(直接跳转)")
+	@RequestMapping(value="/login", method=RequestMethod.POST)
+	public ResponseData loginView(
+			@ApiParam(name = "是否登出", value="logout", defaultValue="false") boolean isLogout,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
 		if ( isLogout ) {
 			destroySession(request, session);
 		}
-		
-		ModelAndView view = null;
+		String msg;
 		if ( isLoggedIn(session) ) {
-			RedirectView redirectView = new RedirectView(request.getContextPath());
-			redirectView.setExposeModelAttributes(false);
-			view = new ModelAndView(redirectView);
+			msg = "logged";
 		} else {
-			view = new ModelAndView("accounts/login");
-			view.addObject("isLogout", isLogout);
-			view.addObject("forwardUrl", forwardUrl);
+			msg = "need-log";
 		}
-		return view;
+		return ResponseData.ok().data("msg",msg);
 	}
-	
+
 	/**
 	 * 为注销的用户销毁Session.
 	 * @param request - HttpServletRequest对象
@@ -125,10 +116,10 @@ public class AccountsController {
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		LOGGER.info(String.format("%s logged out at %s", new Object[] {currentUser, ipAddress}));
-		
+
 		session.setAttribute("isLoggedIn", false);
 	}
-	
+
 	/**
 	 * 检查用户是否已经登录.
 	 * @param session - HttpSession 对象
@@ -141,7 +132,7 @@ public class AccountsController {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * 处理用户的登录请求.
 	 * @param username - 用户名
@@ -149,11 +140,12 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含登录验证结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户的登录请求",notes = "")
 	@RequestMapping(value="/login.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> loginAction(
-			@RequestParam(value="username") String username,
-			@RequestParam(value="password") String password,
-			@RequestParam(value="rememberMe") boolean isAutoLoginAllowed,
+	public @ResponseBody ResponseData loginAction(
+			@ApiParam(name="username", value = "用户名") String username,
+			@ApiParam(name="password", value = "密码") String password,
+			@ApiParam(name="rememberMe", value = "记住我") boolean isAutoLoginAllowed,
 			HttpServletRequest request) {
 		System.out.println("username = " + username);
 		System.out.println("password = " + password);
@@ -164,7 +156,7 @@ public class AccountsController {
 			User user = userService.getUserUsingUsernameOrEmail(username);
 			getSession(request, user, isAutoLoginAllowed);
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -178,39 +170,45 @@ public class AccountsController {
 		session.setAttribute("isLoggedIn", true);
 		session.setAttribute("isAutoLoginAllowed", isAutoLoginAllowed);
 		session.setAttribute("uid", user.getUid());
-		
+
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		LOGGER.info(String.format("%s logged in at %s", new Object[] {user, ipAddress}));
 	}
-	
+
 	/**
 	 * 显示用户注册的页面.
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 包含注册页面信息的ModelAndView对象
 	 */
-	@RequestMapping(value="/register", method=RequestMethod.GET)
-	public ModelAndView registerView(
-			@RequestParam(value="forward", required=false, defaultValue="") String forwardUrl,
+	@ApiOperation(value = "用户注册信息",notes="已经登录则直接跳转到首页")
+	@RequestMapping(value="/register", method=RequestMethod.POST)
+	public ResponseData registerView(
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
-		ModelAndView view = null;
+//		ModelAndView view = null;
+		Map<String,Object> result = new HashMap<>();
 		if ( isLoggedIn(session) ) {
-			RedirectView redirectView = new RedirectView(request.getContextPath());
-			redirectView.setExposeModelAttributes(false);
-			view = new ModelAndView(redirectView);
+			result.put("isLoggedIn",true);
+//			RedirectView redirectView = new RedirectView(request.getContextPath());
+//			redirectView.setExposeModelAttributes(false);
+//			view = new ModelAndView(redirectView);
 		} else {
+			result.put("isLoggedIn",false);
 			List<Language> languages = languageService.getAllLanguages();
 			boolean isAllowRegister = optionService.getOption("allowUserRegister").getOptionValue().equals("1");
-			
-			view = new ModelAndView("accounts/register");
-			view.addObject("languages", languages);
-			view.addObject("isAllowRegister", isAllowRegister);
-			view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
+
+			result.put("languages",languages);
+			result.put("isAllowRegister",isAllowRegister);
+			result.put("csrfToken",CsrfProtector.getCsrfToken(session));
+//			view = new ModelAndView("accounts/register");
+//			view.addObject("languages", languages);
+//			view.addObject("isAllowRegister", isAllowRegister);
+//			view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
 		}
-		return view;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 处理用户注册的请求.
 	 * @param username - 用户名
@@ -221,15 +219,16 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含账户创建结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户注册的请求", notes = "返回注册成功之后的相关信息")
 	@RequestMapping(value="/register.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> registerAction(
-			@RequestParam(value="username") String username,
-			@RequestParam(value="password") String password,
-			@RequestParam(value="email") String email,
-			@RequestParam(value="trueName") String trueName,
-			@RequestParam(value="stuId") String stuId,
-			@RequestParam(value="languagePreference") String languageSlug,
-			@RequestParam(value="csrfToken") String csrfToken,
+	public @ResponseBody ResponseData registerAction(
+			@ApiParam(name="username", value = "用户名") String username,
+			@ApiParam(name="password", value = "密码") String password,
+			@ApiParam(name="email", value = "邮箱") String email,
+			@ApiParam(name="trueName", value = "真实姓名") String trueName,
+			@ApiParam(name="stuId", value = "学号") String stuId,
+			@ApiParam(name="languagePreference", value = "语言偏好") String languageSlug,
+			@ApiParam(name="csrfToken", value = "csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		boolean isAllowRegister = optionService.getOption("allowUserRegister").getOptionValue().equals("1");
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
@@ -240,15 +239,15 @@ public class AccountsController {
 			User user = userService.getUserUsingUsernameOrEmail(username);
 			getSession(request, user, false);
 			String ipAddress = HttpRequestParser.getRemoteAddr(request);
-			LOGGER.info(String.format("User: [Username=%s] created at %s.", 
+			LOGGER.info(String.format("User: [Username=%s] created at %s.",
 					new Object[] {username, ipAddress}));
 		}
 		else {
 			LOGGER.warn("Register failed");
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载重置密码页面.
 	 * @param email - 用户的电子邮件地址
@@ -257,33 +256,42 @@ public class AccountsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含密码重置页面信息的ModelAndView对象
 	 */
-	@RequestMapping(value="/reset-password", method=RequestMethod.GET)
-	public ModelAndView resetPasswordView(
-			@RequestParam(value="email", required = false) String email,
-			@RequestParam(value="token", required = false) String token,
+	@ApiOperation(value = "加载重置密码页面", notes = "判断是否满足重置密码以及返回重置密码的相关信息")
+	@RequestMapping(value="/reset-password", method=RequestMethod.POST)
+	public ResponseData resetPasswordView(
+			@ApiParam(value = "邮箱",name="email", required = false) String email,
+			@ApiParam(value = "token",name="token", required = false) String token,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
-		ModelAndView view = null;
-		
+//		ModelAndView view = null;
+		Map<String,Object> result = new HashMap<>();
+
 		if ( isLoggedIn(session) ) {
-			RedirectView redirectView = new RedirectView(request.getContextPath());
-			redirectView.setExposeModelAttributes(false);
-			view = new ModelAndView(redirectView);
+			result.put("isLoggedIn",true);
+//			RedirectView redirectView = new RedirectView(request.getContextPath());
+//			redirectView.setExposeModelAttributes(false);
+//			view = new ModelAndView(redirectView);
 		} else {
 			boolean isTokenValid = false;
 			if ( token != null && !token.isEmpty() ) {
 				isTokenValid = userService.isEmailValidationValid(email, token);
 			}
-			
-			view = new ModelAndView("accounts/reset-password");
-			view.addObject("email", email);
-			view.addObject("token", token);
-			view.addObject("isTokenValid", isTokenValid);
-			view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
+			result.put("isLoggedIn",false);
+			result.put("email", email);
+			result.put("token", token);
+			result.put("isTokenValid", isTokenValid);
+			result.put("csrfToken", CsrfProtector.getCsrfToken(session));
+
+
+//			view = new ModelAndView("accounts/reset-password");
+//			view.addObject("email", email);
+//			view.addObject("token", token);
+//			view.addObject("isTokenValid", isTokenValid);
+//			view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
 		}
-		return view;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 发送重置密码的电子邮件.
 	 * @param username - 用户的用户名
@@ -292,23 +300,24 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码重置邮件发送结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "发送重置密码的电子邮件")
 	@RequestMapping(value="/forgotPassword.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> forgotPasswordAction(
-			@RequestParam(value="username") String username,
-			@RequestParam(value="email") String email,
-			@RequestParam(value="csrfToken") String csrfToken,
+	public @ResponseBody ResponseData forgotPasswordAction(
+			@ApiParam(value = "用户名", name="username") String username,
+			@ApiParam(value = "邮箱", name="email") String email,
+			@ApiParam(value = "csrfToken", name="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
 		Map<String, Boolean> result = userService.sendVerificationEmail(username, email, isCsrfTokenValid);
-		
+
 		if ( result.get("isSuccessful") ) {
-			LOGGER.info(String.format("User: [Username=%s] send an email for resetting password at %s.", 
+			LOGGER.info(String.format("User: [Username=%s] send an email for resetting password at %s.",
 							new Object[] {username, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 重置用户密码.
 	 * @param email - 用户的电子邮件地址
@@ -319,25 +328,26 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码重置结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "重置用户密码")
 	@RequestMapping(value="/resetPassword.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> resetPasswordAction(
-			@RequestParam(value="email") String email,
-			@RequestParam(value="token") String token,
-			@RequestParam(value="newPassword") String newPassword,
-			@RequestParam(value="confirmPassword") String confirmPassword,
-			@RequestParam(value="csrfToken") String csrfToken,
+	public @ResponseBody ResponseData resetPasswordAction(
+			@ApiParam(value = "邮箱", name="email") String email,
+			@ApiParam(value = "token", name="token") String token,
+			@ApiParam(value = "新密码", name="newPassword") String newPassword,
+			@ApiParam(value = "确认密码", name="confirmPassword") String confirmPassword,
+			@ApiParam(value = "csrfToken", name="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
 		Map<String, Boolean> result = userService.resetPassword(email, token, newPassword, confirmPassword, isCsrfTokenValid);
-		
+
 		if ( result.get("isSuccessful") ) {
-			LOGGER.info(String.format("User: [Email=%s] resetted password at %s", 
+			LOGGER.info(String.format("User: [Email=%s] resetted password at %s",
 							new Object[] {email, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载用户的个人信息.
 	 * @param userId - 用户的唯一标识符
@@ -345,24 +355,32 @@ public class AccountsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含用户个人信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载用户的个人信息")
 	@RequestMapping(value="/user/{userId}", method=RequestMethod.GET)
-	public ModelAndView userView(
+	public ResponseData userView(
 			@PathVariable("userId") long userId,
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = userService.getUserUsingUid(userId);
 		if ( user == null || "judgers".equals(user.getUserGroup().getUserGroupSlug()) ) {
 			throw new ResourceNotFoundException();
 		}
-		
-		ModelAndView view = new ModelAndView("accounts/user");
-		view.addObject("user", user);
-		view.addAllObjects(userService.getUserMetaUsingUid(user));
-		
-		view.addObject("submissions", submissionService.getSubmissionOfUser(userId));
-		view.addObject("submissionStats", submissionService.getSubmissionStatsOfUser(userId));
-		return view;
+
+//		ModelAndView view = new ModelAndView("accounts/user");
+		Map<String, Object> result = new HashMap<>();
+		result.put("user", user);
+		result.put("UserMeta", userService.getUserMetaUsingUid(user));
+
+		result.put("submissions", submissionService.getSubmissionOfUser(userId));
+		result.put("submissionStats", submissionService.getSubmissionStatsOfUser(userId));
+
+//		view.addObject("user", user);
+//		view.addAllObjects(userService.getUserMetaUsingUid(user));
+//
+//		view.addObject("submissions", submissionService.getSubmissionOfUser(userId));
+//		view.addObject("submissionStats", submissionService.getSubmissionStatsOfUser(userId));
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 获取某个用户一段时间内的提交次数.
 	 * @param userId - 用户的唯一标识符
@@ -370,8 +388,9 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含某个用户提交次数与时间的 Map 对象
 	 */
+	@ApiOperation(value = "获取某个用户一段时间内的提交次数")
 	@RequestMapping(value="/getNumberOfSubmissionsOfUsers.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getNumberOfSubmissionsOfUsersAction(
+	public @ResponseBody ResponseData getNumberOfSubmissionsOfUsersAction(
 			@RequestParam(value="uid", required=false, defaultValue="0") long userId,
 			@RequestParam(value="period") int period,
 			HttpServletRequest request) {
@@ -384,39 +403,50 @@ public class AccountsController {
 		Date previousDate = DateUtils.getPreviousDate(period);
 		Map<String, Long> totalSubmissions = submissionService.getNumberOfSubmissionsUsingDate(previousDate, today, userId, false);
 		Map<String, Long> acceptedSubmissions = submissionService.getNumberOfSubmissionsUsingDate(previousDate, today, userId, true);
-		
+
 		submissions.put("totalSubmissions", totalSubmissions);
 		submissions.put("acceptedSubmissions", acceptedSubmissions);
-		return submissions;
+		return ResponseData.ok().data("submissions",submissions);
 	}
-	
+
 	/**
 	 * 加载用户控制板页面.
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 包含控制板页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载用户控制板页面")
 	@RequestMapping(value="/dashboard", method=RequestMethod.GET)
-	public ModelAndView dashboardView(
+	public ResponseData dashboardView(
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
-		ModelAndView view = null;
-		
+//		ModelAndView view = null;
+		Map<String, Object> result = new HashMap<>();
+
 		if ( !isLoggedIn(session) ) {
-			RedirectView redirectView = new RedirectView(request.getContextPath() + "/accounts/login");
-			redirectView.setExposeModelAttributes(false);
-			view = new ModelAndView(redirectView);
+			result.put("isLoggedIn", false);
+//			RedirectView redirectView = new RedirectView(request.getContextPath() + "/accounts/login");
+//			redirectView.setExposeModelAttributes(false);
+//			view = new ModelAndView(redirectView);
 		}
-		
-		long userId = (Long)session.getAttribute("uid");
-		User user = userService.getUserUsingUid(userId);
-		view = new ModelAndView("accounts/dashboard");
-		view.addObject("user", user);
-		view.addAllObjects(userService.getUserMetaUsingUid(user));
-		view.addObject("submissions", submissionService.getSubmissionOfUser(userId));
-		return view;
+		else {
+			result.put("isLoggedIn", true);
+			long userId = (Long)session.getAttribute("uid");
+			User user = userService.getUserUsingUid(userId);
+			result.put("user", user);
+			result.put("UserMeta", userService.getUserMetaUsingUid(user));
+			result.put("submissions", submissionService.getSubmissionOfUser(userId));
+		}
+
+//		long userId = (Long)session.getAttribute("uid");
+//		User user = userService.getUserUsingUid(userId);
+//		view = new ModelAndView("accounts/dashboard");
+//		view.addObject("user", user);
+//		view.addAllObjects(userService.getUserMetaUsingUid(user));
+//		view.addObject("submissions", submissionService.getSubmissionOfUser(userId));
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 处理用户修改密码的请求.
 	 * @param oldPassword - 旧密码
@@ -425,22 +455,23 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码验证结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户修改密码的请求")
 	@RequestMapping(value="/changePassword.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> changePasswordInDashboardAction(
-			@RequestParam(value="oldPassword") String oldPassword,
-			@RequestParam(value="newPassword") String newPassword,
-			@RequestParam(value="confirmPassword") String confirmPassword,
+	public @ResponseBody ResponseData changePasswordInDashboardAction(
+			@ApiParam(value = "旧密码", name="oldPassword") String oldPassword,
+			@ApiParam(value = "新密码", name="newPassword") String newPassword,
+			@ApiParam(value = "确认密码", name="confirmPassword") String confirmPassword,
 			HttpServletRequest request) {
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
-		
-		Map<String, Boolean> result = userService.changePassword(currentUser, oldPassword, newPassword, confirmPassword); 
+
+		Map<String, Boolean> result = userService.changePassword(currentUser, oldPassword, newPassword, confirmPassword);
 		if ( result.get("isSuccessful") ) {
 			LOGGER.info(String.format("%s changed password at %s", new Object[] {currentUser, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 处理用户更改个人资料的请求.
 	 * @param email - 用户的电子邮件地址
@@ -451,29 +482,38 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含个人资料修改结果的Map<String, Boolean>对象
 	 */
+	@ApiParam(value = "处理用户更改个人资料的请求")
 	@RequestMapping(value="/updateProfile.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> updateProfileInDashboardAction(
-			@RequestParam(value="email") String email,
-			@RequestParam(value="location") String location,
-			@RequestParam(value="website") String website,
-			@RequestParam(value="socialLinks") String socialLinks,
-			@RequestParam(value="aboutMe") String aboutMe,
+	public @ResponseBody ResponseData updateProfileInDashboardAction(
+			@ApiParam(value = "邮箱", name="email") String email,
+			@ApiParam(value = "地址", name="location") String location,
+			@ApiParam(value = "主页", name="website") String website,
+			@ApiParam(value = "社交网络信息", name="socialLinks") String socialLinks,
+			@ApiParam(value = "个人简介", name="aboutMe") String aboutMe,
 			HttpServletRequest request) {
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
-		
-		Map<String, Boolean> result = userService.updateProfile(currentUser, email, location, website, socialLinks, aboutMe); 
+
+		Map<String, Boolean> result = userService.updateProfile(currentUser, email, location, website, socialLinks, aboutMe);
 		if ( result.get("isSuccessful") ) {
 			LOGGER.info(String.format("%s updated profile at %s", new Object[] {currentUser, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
+	/**
+	 * 处理用户修改头像的请求
+	 * @param file -头像文件
+	 * @param userId -用户编号
+	 * @param request - HttpServletRequest对象
+	 * @return
+	 */
+	@ApiOperation(value = "处理用户修改头像的请求")
 	@RequestMapping(value = "/changeAvatar", method = RequestMethod.POST)
 	@ResponseBody
-	public String changeAvatar(
-			@RequestParam(value = "avatar_file") MultipartFile file,
-			@RequestParam(value = "userId") long userId,
+	public ResponseData changeAvatar(
+			@ApiParam(value = "头像文件", name="avatar_file") MultipartFile file,
+			@ApiParam(value = "用户编号", name="userId") long userId,
 			HttpServletRequest request) {
 		LOGGER.debug("get in the changeAvatar");
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
@@ -500,34 +540,34 @@ public class AccountsController {
 				System.out.println("write it");
 			} catch (Exception e) {
 				LOGGER.debug("e.getMessage() = kkkkkkk "+e.getMessage());
-				return "false";
+				return ResponseData.error();
 			}
 		}
 		LOGGER.debug("changeAvatar Successful");
-		return "true";
+		return ResponseData.ok().data("result",true);
 	}
-	
+
 	/**
 	 * 自动注入的UserService对象.
 	 * 用于完成用户业务逻辑操作.
 	 */
 	@Autowired
 	private UserService userService;
-	
+
 	/**
 	 * 自动注入的LanguageService对象.
 	 * 用于加载注册页面的语言选项.
 	 */
 	@Autowired
 	private LanguageService languageService;
-	
+
 	/**
 	 * 自动注入的SubmissionService对象.
 	 * 用于加载个人信息页面用户的提交和通过情况.
 	 */
 	@Autowired
 	private SubmissionService submissionService;
-	
+
 	/**
 	 * 自动注入的OptionService对象.
 	 * 用于查询注册功能是否开放.
@@ -537,7 +577,7 @@ public class AccountsController {
 
 	@Value("${cbs.imagesPath}")
 	private String avatarsPath;
-	
+
 	/**
 	 * 日志记录器.
 	 */

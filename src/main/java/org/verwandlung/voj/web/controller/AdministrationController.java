@@ -56,11 +56,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ResourceUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -76,10 +72,9 @@ import org.verwandlung.voj.web.util.SessionListener;
 
 /**
  * 用于处理系统管理的请求.
- * 
- * @author Haozhe Xie
+ *
  */
-@Controller
+@RestController
 @RequestMapping(value="/administration")
 public class AdministrationController {
 	/**
@@ -887,6 +882,48 @@ public class AdministrationController {
 		result.put("isSuccessful", true);
 		return result;
 	}
+
+	/**
+	 * 加载创建竞赛页面.
+	 * @param request - HttpServletRequest对象
+	 * @param response - HttpServletResponse对象
+	 * @return 包含创建竞赛页面信息的ModelAndView对象
+	 */
+	@RequestMapping(value="/new-contest", method=RequestMethod.GET)
+	public ModelAndView newContestView(
+			HttpServletRequest request, HttpServletResponse response) {
+
+		return new ModelAndView("administration/new-contest");
+	}
+
+//	/**
+//	 * 处理用户创建竞赛的请求.
+//	 * @param ContestName - 试题名称
+//	 * @param StartTime - 时间限制
+//	 * @param EndTime - 内存占用限制
+//	 * @param description - 试题描述
+//	 * @param ContestMode - 试题提示
+//	 * @param ChooseProblem - 输入格式
+//	 */
+//	@RequestMapping(value="/createProblem.action", method=RequestMethod.POST)
+//	public @ResponseBody Map<String, Object> createContestAction(
+//			@RequestParam(value="CroblemName") String ContestName,
+//			@RequestParam(value="StartTime") String StartTime,
+//			@RequestParam(value="EndTime") String EndTime,
+//			@RequestParam(value="description") String description,
+//			@RequestParam(value="ContestMode") String ContestMode,
+//			@RequestParam(value="ChooseProblem") String ChooseProblem,
+//			HttpServletRequest request) {
+//		Map<String, Object> result = contestService.createContest(ContestName,description,StartTime,EndTime,ContestMode,ChooseProblem);
+//		if ( (boolean) result.get("isSuccessful") ) {
+//			long problemId = (Long) result.get("problemId");
+//			String ipAddress = HttpRequestParser.getRemoteAddr(request);
+//
+//			LOGGER.info(String.format("Contest: [ProblemId=%s] was created by administrator at %s.",
+//					new Object[] {problemId, ipAddress}));
+//		}
+//		return result;
+//	}
 
 	/**
 	 * 加载常规选项页面.

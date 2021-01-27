@@ -67,10 +67,9 @@ import java.util.Map;
 
 /**
  * 处理竞赛的相关请求.
- * 
- * @author Haozhe Xie
+ *
  */
-@Controller
+@RestController
 @RequestMapping(value="/contest")
 public class ContestsController {
 	/**

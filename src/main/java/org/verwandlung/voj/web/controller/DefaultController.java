@@ -46,10 +46,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import org.verwandlung.voj.web.messenger.ApplicationEventListener;
@@ -59,10 +56,9 @@ import org.verwandlung.voj.web.util.LocaleUtils;
 
 /**
  * 处理应用程序公共的请求.
- * 
- * @author Haozhe Xie
+ *
  */
-@Controller
+@RestController
 @RequestMapping(value="/")
 public class DefaultController {
 	/**
@@ -227,18 +223,19 @@ public class DefaultController {
 		return result;
 	}
 	
-	/**
-	 * 对于所有未正常映射URL的页面, 显示页面未找到.
-	 * @param request - HttpRequest对象
-	 * @param response - HttpResponse对象
-	 * @return 返回一个包含异常信息的ModelAndView对象
-	 */
-	@RequestMapping(value="/*", method=RequestMethod.GET)
-	public ModelAndView notFoundView(
-			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("errors/404");
-		return view;
-	}
+//	/**
+//	 * 对于所有未正常映射URL的页面, 显示页面未找到.
+//	 * @param request - HttpRequest对象
+//	 * @param response - HttpResponse对象
+//	 * @return 返回一个包含异常信息的ModelAndView对象
+//	 */
+//	@RequestMapping(value="/*", method=RequestMethod.GET)
+//	public String notFoundView(
+//			HttpServletRequest request, HttpServletResponse response) {
+////		ModelAndView view = new ModelAndView("errors/404");
+////		return view;
+//		return "no this url";
+//	}
 	
 	/**
 	 * 显示升级浏览器页面.
