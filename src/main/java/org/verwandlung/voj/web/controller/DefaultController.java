@@ -44,6 +44,7 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ import org.verwandlung.voj.web.util.ResponseData;
  * 处理应用程序公共的请求.
  *
  */
+@Api(tags = "处理应用程序公共的请求")
 @RestController
 @RequestMapping(value="/")
 public class DefaultController {
