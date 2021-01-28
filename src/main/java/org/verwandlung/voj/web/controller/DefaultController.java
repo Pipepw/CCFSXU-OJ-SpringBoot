@@ -94,7 +94,7 @@ public class DefaultController {
 		result.put("bulletinBoardMessages", bulletinBoardMessages);
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示使用条款页面.
 	 * @param request - HttpRequest对象
@@ -142,7 +142,7 @@ public class DefaultController {
 		result.put("languages", languageService.getAllLanguages());
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 获取评测机列表.
 	 * @param offset - 当前加载评测机的UID
@@ -157,12 +157,12 @@ public class DefaultController {
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>();
 		List<Map<String, String>> judgers = getJudgers(offset);
-		
+
 		result.put("isSuccessful", judgers != null && !judgers.isEmpty());
 		result.put("judgers", judgers);
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 获取评测机的详细信息.
 	 * @param offset - 当前加载评测机的UID
@@ -172,19 +172,19 @@ public class DefaultController {
 		UserGroup userGroup = userService.getUserGroupUsingSlug("judgers");
 		List<User> judgersList = userService.getUserUsingUserGroup(userGroup, offset, NUMBER_OF_JUDGERS_PER_REQUEST);
 		List<Map<String, String>> judgers = new ArrayList<Map<String, String>>();
-		
+
 		for ( User judger : judgersList ) {
 			Map<String, String> judgerInformation = new HashMap<>(3, 1);
 			String username = judger.getUsername();
 			String description = keepAliveEventListener.getJudgerDescription(username);
-			
+
 			judgerInformation.put("username", username);
 			judgerInformation.put("description", description);
 			judgers.add(judgerInformation);
 		}
 		return judgers;
 	}
-	
+
 	/**
 	 * 显示帮助页面.
 	 * @param request - HttpRequest对象
@@ -200,7 +200,7 @@ public class DefaultController {
 		result.put("msg","跳转到显示帮助页面");
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示关于页面.
 	 * @param request - HttpRequest对象
@@ -216,7 +216,7 @@ public class DefaultController {
 		result.put("msg","跳转到显示关于页面");
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示语言切换的页面.
 	 * @param request - HttpRequest对象
@@ -254,7 +254,7 @@ public class DefaultController {
 		result.put("isSuccessful", true);
 		return ResponseData.ok().data("result",result);
 	}
-	
+
 //	/**
 //	 * 对于所有未正常映射URL的页面, 显示页面未找到.
 //	 * @param request - HttpRequest对象
@@ -268,7 +268,7 @@ public class DefaultController {
 ////		return view;
 //		return "no this url";
 //	}
-	
+
 	/**
 	 * 显示升级浏览器页面.
 	 * @param request - HttpRequest对象

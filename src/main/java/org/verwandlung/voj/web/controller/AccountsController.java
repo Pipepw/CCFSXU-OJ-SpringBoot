@@ -506,7 +506,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含个人资料修改结果的Map<String, Boolean>对象
 	 */
-	@ApiParam(value = "处理用户更改个人资料的请求")
+	@ApiOperation(value = "处理用户更改个人资料的请求")
 	@RequestMapping(value="/updateProfile.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData updateProfileInDashboardAction(
 			@ApiParam(value = "邮箱", name="email")
