@@ -50,7 +50,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,15 +70,13 @@ import org.verwandlung.voj.web.exception.ResourceNotFoundException;
 import org.verwandlung.voj.web.messenger.ApplicationEventListener;
 import org.verwandlung.voj.web.model.*;
 import org.verwandlung.voj.web.service.*;
-import org.verwandlung.voj.web.util.CsrfProtector;
-import org.verwandlung.voj.web.util.DateUtils;
-import org.verwandlung.voj.web.util.HttpRequestParser;
-import org.verwandlung.voj.web.util.SessionListener;
+import org.verwandlung.voj.web.util.*;
 
 /**
  * 用于处理系统管理的请求.
  *
  */
+@Api(tags = "用于处理系统管理的请求.")
 @RestController
 @RequestMapping(value="/administration")
 public class AdministrationController {
@@ -83,20 +86,32 @@ public class AdministrationController {
 	 * @param response - HttpResponse对象
 	 * @return 包含系统管理页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载系统管理首页")
 	@RequestMapping(value="", method=RequestMethod.GET)
-	public ModelAndView indexView(
+	public ResponseData indexView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("administration/index");
-		view.addObject("totalUsers", getTotalUsers());
-		view.addObject("newUsersToday", getNumberOfUserRegisteredToday());
-		view.addObject("onlineUsers", getOnlineUsers());
-		view.addObject("totalProblems", getTotalProblems());
-		view.addObject("numberOfCheckpoints", getNumberOfCheckpoints());
-		view.addObject("privateProblems", getPrivateProblems());
-		view.addObject("submissionsToday", getSubmissionsToday());
-		view.addObject("memoryUsage", getCurrentMemoryUsage());
-		view.addObject("onlineJudgers", getOnlineJudgers());
-		return view;
+//		ModelAndView view = new ModelAndView("administration/index");
+//		view.addObject("totalUsers", getTotalUsers());
+//		view.addObject("newUsersToday", getNumberOfUserRegisteredToday());
+//		view.addObject("onlineUsers", getOnlineUsers());
+//		view.addObject("totalProblems", getTotalProblems());
+//		view.addObject("numberOfCheckpoints", getNumberOfCheckpoints());
+//		view.addObject("privateProblems", getPrivateProblems());
+//		view.addObject("submissionsToday", getSubmissionsToday());
+//		view.addObject("memoryUsage", getCurrentMemoryUsage());
+//		view.addObject("onlineJudgers", getOnlineJudgers());
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("totalUsers", getTotalUsers());
+		result.put("newUsersToday", getNumberOfUserRegisteredToday());
+		result.put("onlineUsers", getOnlineUsers());
+		result.put("totalProblems", getTotalProblems());
+		result.put("numberOfCheckpoints", getNumberOfCheckpoints());
+		result.put("privateProblems", getPrivateProblems());
+		result.put("submissionsToday", getSubmissionsToday());
+		result.put("memoryUsage", getCurrentMemoryUsage());
+		result.put("onlineJudgers", getOnlineJudgers());
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -194,8 +209,9 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含提交次数与时间的 Map 对象
 	 */
+	@ApiOperation(value = "获取系统一段时间内的提交次数")
 	@RequestMapping(value="/getNumberOfSubmissions.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getNumberOfSubmissionsAction(
+	public @ResponseBody ResponseData getNumberOfSubmissionsAction(
 			@RequestParam(value="period") int period,
 			HttpServletRequest request) {
 		Map<String, Object> submissions = new HashMap<>(2, 1);
@@ -206,7 +222,7 @@ public class AdministrationController {
 		
 		submissions.put("totalSubmissions", totalSubmissions);
 		submissions.put("acceptedSubmissions", acceptedSubmissions);
-		return submissions;
+		return ResponseData.ok().data("submissions",submissions);
 	}
 	
 	/**
@@ -215,10 +231,14 @@ public class AdministrationController {
 	 * @param response - HttpResponse对象
 	 * @return 包含用户列表页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载用户列表页面.")
 	@RequestMapping(value="/all-users", method=RequestMethod.GET)
-	public ModelAndView allUsersView(
+	public ResponseData allUsersView(
+			@ApiParam(value = "用户分组", name="userGroup", required=false, defaultValue="")
 			@RequestParam(value="userGroup", required=false, defaultValue="") String userGroupSlug,
+			@ApiParam(value = "用户名", name="username", required=false, defaultValue="")
 			@RequestParam(value="username", required=false, defaultValue="") String username,
+			@ApiParam(value = "页号", name="page", required=false, defaultValue="1")
 			@RequestParam(value="page", required=false, defaultValue="1") long pageNumber,
 			HttpServletRequest request, HttpServletResponse response) {
 		final int NUMBER_OF_USERS_PER_PAGE = 100;
@@ -228,17 +248,25 @@ public class AdministrationController {
 		long offset = (pageNumber >= 1 ? pageNumber - 1 : 0) * NUMBER_OF_USERS_PER_PAGE;
 		List<User> users = userService.getUserUsingUserGroupAndUsername(userGroup, username, offset, NUMBER_OF_USERS_PER_PAGE);
 		
-		ModelAndView view = new ModelAndView("administration/all-users");
-		view.addObject("userGroups", userGroups);
-		view.addObject("selectedUserGroup", userGroupSlug);
-		view.addObject("username", username);
-		view.addObject("currentPage", pageNumber);
-		view.addObject("totalPages", (long) Math.ceil(totalUsers * 1.0 / NUMBER_OF_USERS_PER_PAGE));
-		view.addObject("users", users);
+//		ModelAndView view = new ModelAndView("administration/all-users");
+//		view.addObject("userGroups", userGroups);
+//		view.addObject("selectedUserGroup", userGroupSlug);
+//		view.addObject("username", username);
+//		view.addObject("currentPage", pageNumber);
+//		view.addObject("totalPages", (long) Math.ceil(totalUsers * 1.0 / NUMBER_OF_USERS_PER_PAGE));
+//		view.addObject("users", users);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("userGroups", userGroups);
+		result.put("selectedUserGroup", userGroupSlug);
+		result.put("username", username);
+		result.put("currentPage", pageNumber);
+		result.put("totalPages", (long) Math.ceil(totalUsers * 1.0 / NUMBER_OF_USERS_PER_PAGE));
+		result.put("users", users);
 		for (User user : users) {
 			System.out.println("stuId = "+user.getStuId());
 		}
-		return view;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -247,8 +275,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 提交记录的删除结果
 	 */
+	@ApiOperation(value = "删除选定的用户")
 	@RequestMapping(value="/deleteUsers.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> deleteUsersAction(
+	public @ResponseBody ResponseData deleteUsersAction(
+			@ApiParam(value = "选定的用户", name="users")
 			@RequestParam(value="users") String users,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = new HashMap<>(2, 1);
@@ -258,9 +288,9 @@ public class AdministrationController {
 			userService.deleteUser(userId);
 		}
 		result.put("isSuccessful", true);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载编辑用户信息的页面.
 	 * @param userId - 用户的唯一标识符
@@ -268,8 +298,9 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含编辑用户信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载编辑用户信息的页面")
 	@RequestMapping(value="/edit-user/{userId}", method=RequestMethod.GET)
-	public ModelAndView editUserView(
+	public ResponseData editUserView(
 			@PathVariable(value = "userId") long userId,
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = userService.getUserUsingUid(userId);
@@ -277,17 +308,23 @@ public class AdministrationController {
 		if ( user == null ) {
 			throw new ResourceNotFoundException();
 		}
-		
+
 		List<UserGroup> userGroups = userService.getUserGroups();
 		List<Language> languages = languageService.getAllLanguages();
-		ModelAndView view = new ModelAndView("administration/edit-user");
-		view.addObject("user", user);
-		view.addAllObjects(userMeta);
-		view.addObject("userGroups", userGroups);
-		view.addObject("languages", languages);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/edit-user");
+//		view.addObject("user", user);
+//		view.addAllObjects(userMeta);
+//		view.addObject("userGroups", userGroups);
+//		view.addObject("languages", languages);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("user", user);
+		result.put("userMeta",userMeta);
+		result.put("userGroups", userGroups);
+		result.put("languages", languages);
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 编辑用户个人信息.
 	 * @param uid - 用户的唯一标识符.
@@ -302,52 +339,66 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含个人资料修改结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "编辑用户个人信息")
 	@RequestMapping(value="/editUser.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> editUserAction(
+	public @ResponseBody ResponseData editUserAction(
+			@ApiParam(value="用户唯一标识符", name="uid")
 			@RequestParam(value="uid") long uid,
+			@ApiParam(value="用户的密码", name="password")
 			@RequestParam(value="password") String password,
+			@ApiParam(value="用户邮箱", name="email")
 			@RequestParam(value="email") String email,
+			@ApiParam(value="用户分组", name="userGroup")
 			@RequestParam(value="userGroup") String userGroupSlug,
+			@ApiParam(value="用户偏好语言", name="preferLanguage")
 			@RequestParam(value="preferLanguage") String preferLanguageSlug,
+			@ApiParam(value="用户地址", name="location")
 			@RequestParam(value="location") String location,
+			@ApiParam(value="用户个人主页", name="website")
 			@RequestParam(value="website") String website,
+			@ApiParam(value="用户社交网络信息", name="socialLinks")
 			@RequestParam(value="socialLinks") String socialLinks,
+			@ApiParam(value="用户个人简介", name="aboutMe")
 			@RequestParam(value="aboutMe") String aboutMe,
 			HttpServletRequest request) {
 		User user = userService.getUserUsingUid(uid);
 		Map<String, Boolean> result = new HashMap<>(12, 1);
 		result.put("isSuccessful", false);
 		result.put("isUserExists", false);
-		
+
 		if ( user != null ) {
 			Map<String, Boolean> updateProfileResult = userService.updateProfile(user, password, userGroupSlug, preferLanguageSlug);
 			Map<String, Boolean> updateUserMetaResult = userService.updateProfile(user, email, location, website, socialLinks, aboutMe);
 			boolean isUpdateProfileSuccessful = updateProfileResult.get("isSuccessful");
 			boolean isUpdateUserMetaSuccessful = updateUserMetaResult.get("isSuccessful");
-			
+
 			result.putAll(updateProfileResult);
 			result.putAll(updateUserMetaResult);
 			result.put("isUserExists", true);
 			result.put("isSuccessful", isUpdateProfileSuccessful && isUpdateUserMetaSuccessful);
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载创建用户页面.
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpServletResponse对象
 	 * @return 包含创建用户页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载创建用户页面")
 	@RequestMapping(value="/new-user", method=RequestMethod.GET)
-	public ModelAndView newUserView(
+	public ResponseData newUserView(
 			HttpServletRequest request, HttpServletResponse response) {
 		List<UserGroup> userGroups = userService.getUserGroups();
 		List<Language> languages = languageService.getAllLanguages();
-		ModelAndView view = new ModelAndView("administration/new-user");
-		view.addObject("userGroups", userGroups);
-		view.addObject("languages", languages);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/new-user");
+//		view.addObject("userGroups", userGroups);
+//		view.addObject("languages", languages);
+		Map<String, Object> result = new HashMap<>();
+		result.put("userGroups", userGroups);
+		result.put("languages", languages);
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -360,37 +411,51 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含账户创建结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "创建新用户", notes = "根据结果中的isSuccessful判断是否成功")
 	@RequestMapping(value="/newUser.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> newUserAction(
+	public @ResponseBody ResponseData newUserAction(
+			@ApiParam(value = "用户名", name="username")
 			@RequestParam(value="username") String username,
+			@ApiParam(value = "密码", name="password")
 			@RequestParam(value="password") String password,
+			@ApiParam(value = "用户邮箱", name="email")
 			@RequestParam(value="email") String email,
+			@ApiParam(value = "真实姓名", name="trueName")
 			@RequestParam(value="trueName") String trueName,
+			@ApiParam(value = "学号", name="stuId")
 			@RequestParam(value="stuId") String stuId,
+			@ApiParam(value = "用户分组", name="userGroup")
 			@RequestParam(value="userGroup") String userGroupSlug,
+			@ApiParam(value = "偏好语言", name="preferLanguage")
 			@RequestParam(value="preferLanguage") String preferLanguageSlug,
 			HttpServletRequest request) {
+		System.out.println("username = " + username);
 		Map<String, Boolean> result = userService.createUser(username, password, email, trueName, stuId, userGroupSlug, preferLanguageSlug);
 
 		if ( result.get("isSuccessful") ) {
 			String ipAddress = HttpRequestParser.getRemoteAddr(request);
-			LOGGER.info(String.format("User: [Username=%s] was created by administrator at %s.", 
+			LOGGER.info(String.format("User: [Username=%s] was created by administrator at %s.",
 					new Object[] {username, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载试题列表页面.
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpServletResponse对象
 	 * @return 包含提交列表页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载试题列表页面")
 	@RequestMapping(value="/all-problems", method=RequestMethod.GET)
-	public ModelAndView allProblemsView(
+	public ResponseData allProblemsView(
+			@ApiParam(value="关键字", name="keyword", required=false, defaultValue="")
 			@RequestParam(value="keyword", required=false, defaultValue="") String keyword,
+			@ApiParam(value="问题分类", name="problemCategory", required=false, defaultValue="")
 			@RequestParam(value="problemCategory", required=false, defaultValue="") String problemCategorySlug,
+			@ApiParam(value="问题标签", name="problemTag", required=false, defaultValue="")
 			@RequestParam(value="problemTag", required=false, defaultValue="") String problemTagSlug,
+			@ApiParam(value="页号", name="page", required=false, defaultValue="1")
 			@RequestParam(value="page", required=false, defaultValue="1") long pageNumber,
 			HttpServletRequest request, HttpServletResponse response) {
 		final int NUMBER_OF_PROBLEMS_PER_PAGE = 100;
@@ -407,16 +472,25 @@ public class AdministrationController {
 		Map<Long, List<ProblemTag>> problemTagRelationships =
 				problemService.getProblemTagsOfProblems(problemIdLowerBound, problemIdUpperBound);
 
-		ModelAndView view = new ModelAndView("administration/all-problems");
-		view.addObject("problemCategories", problemCategories);
-		view.addObject("selectedProblemCategory", problemCategorySlug);
-		view.addObject("keyword", keyword);
-		view.addObject("currentPage", pageNumber);
-		view.addObject("totalPages", (long) Math.ceil(totalProblems * 1.0 / NUMBER_OF_PROBLEMS_PER_PAGE));
-		view.addObject("problems", problems);
-		view.addObject("problemCategoryRelationships", problemCategoryRelationships);
-		view.addObject("problemTagRelationships", problemTagRelationships);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/all-problems");
+//		view.addObject("problemCategories", problemCategories);
+//		view.addObject("selectedProblemCategory", problemCategorySlug);
+//		view.addObject("keyword", keyword);
+//		view.addObject("currentPage", pageNumber);
+//		view.addObject("totalPages", (long) Math.ceil(totalProblems * 1.0 / NUMBER_OF_PROBLEMS_PER_PAGE));
+//		view.addObject("problems", problems);
+//		view.addObject("problemCategoryRelationships", problemCategoryRelationships);
+//		view.addObject("problemTagRelationships", problemTagRelationships);
+		Map<String, Object> result = new HashMap<>();
+		result.put("problemCategories", problemCategories);
+		result.put("selectedProblemCategory", problemCategorySlug);
+		result.put("keyword", keyword);
+		result.put("currentPage", pageNumber);
+		result.put("totalPages", (long) Math.ceil(totalProblems * 1.0 / NUMBER_OF_PROBLEMS_PER_PAGE));
+		result.put("problems", problems);
+		result.put("problemCategoryRelationships", problemCategoryRelationships);
+		result.put("problemTagRelationships", problemTagRelationships);
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -425,40 +499,45 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 试题的删除结果
 	 */
+	@ApiOperation("删除选定的试题")
 	@RequestMapping(value="/deleteProblems.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> deleteProblemsAction(
+	public @ResponseBody ResponseData deleteProblemsAction(
+			@ApiParam(value="选定的问题", name="problems")
 			@RequestParam(value="problems") String problems,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = new HashMap<>(2, 1);
 		List<Long> problemList = JSON.parseArray(problems, Long.class);
-		
+
 		for ( Long problemId : problemList ) {
 			problemService.deleteProblem(problemId);
-			
+
 			String ipAddress = HttpRequestParser.getRemoteAddr(request);
-			LOGGER.info(String.format("Problem: [ProblemId=%s] was deleted by administrator at %s.", 
+			LOGGER.info(String.format("Problem: [ProblemId=%s] was deleted by administrator at %s.",
 					new Object[] {problemId, ipAddress}));
 		}
 		result.put("isSuccessful", true);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 加载创建试题页面.
 	 * @param request - HttpServletRequest对象
 	 * @param response - HttpServletResponse对象
 	 * @return 包含创建试题页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载创建试题页面")
 	@RequestMapping(value="/new-problem", method=RequestMethod.GET)
-	public ModelAndView newProblemView(
+	public ResponseData newProblemView(
 			HttpServletRequest request, HttpServletResponse response) {
 		Map<ProblemCategory, List<ProblemCategory>> problemCategories = problemService.getProblemCategoriesWithHierarchy();
-		
-		ModelAndView view = new ModelAndView("administration/new-problem");
-		view.addObject("problemCategories", problemCategories);
-		return view;
+
+//		ModelAndView view = new ModelAndView("administration/new-problem");
+//		view.addObject("problemCategories", problemCategories);
+		Map<String, Object> result = new HashMap<>();
+		result.put("problemCategories", problemCategories);
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 处理用户创建试题的请求.
 	 * @param problemName - 试题名称
@@ -478,21 +557,36 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题创建结果的 Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户创建试题的请求")
 	@RequestMapping(value="/createProblem.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> createProblemAction(
+	public @ResponseBody ResponseData createProblemAction(
+			@ApiParam(value="试题名称", name="problemName")
 			@RequestParam(value="problemName") String problemName,
-			@RequestParam(value="timeLimit") String timeLimit, 
-			@RequestParam(value="memoryLimit") String memoryLimit, 
-			@RequestParam(value="description") String description, 
-			@RequestParam(value="hint") String hint, 
-			@RequestParam(value="inputFormat") String inputFormat, 
-			@RequestParam(value="outputFormat") String outputFormat, 
-			@RequestParam(value="inputSample") String inputSample, 
-			@RequestParam(value="outputSample") String outputSample, 
-			@RequestParam(value="testCases") String testCases, 
-			@RequestParam(value="problemCategories") String problemCategories, 
-			@RequestParam(value="problemTags") String problemTags, 
-			@RequestParam(value="isPublic") boolean isPublic, 
+			@ApiParam(value="时间限制", name="timeLimit")
+			@RequestParam(value="timeLimit") String timeLimit,
+			@ApiParam(value="内存限制", name="memoryLimit")
+			@RequestParam(value="memoryLimit") String memoryLimit,
+			@ApiParam(value="试题描述", name="description")
+			@RequestParam(value="description") String description,
+			@ApiParam(value="提示", name="hint")
+			@RequestParam(value="hint") String hint,
+			@ApiParam(value="输入格式", name="inputFormat")
+			@RequestParam(value="inputFormat") String inputFormat,
+			@ApiParam(value="输出格式", name="outputFormat")
+			@RequestParam(value="outputFormat") String outputFormat,
+			@ApiParam(value="样例输入", name="inputSample")
+			@RequestParam(value="inputSample") String inputSample,
+			@ApiParam(value="样例输出", name="outputSample")
+			@RequestParam(value="outputSample") String outputSample,
+			@ApiParam(value="测试点", name="testCases")
+			@RequestParam(value="testCases") String testCases,
+			@ApiParam(value="试题分类", name="problemCategories")
+			@RequestParam(value="problemCategories") String problemCategories,
+			@ApiParam(value="试题标签", name="problemTags")
+			@RequestParam(value="problemTags") String problemTags,
+			@ApiParam(value="是否公开", name="isPublic")
+			@RequestParam(value="isPublic") boolean isPublic,
+			@ApiParam(value="测试点是否精确匹配", name="isExactlyMatch")
 			@RequestParam(value="isExactlyMatch") boolean isExactlyMatch,
 			HttpServletRequest request) {
 		if ( timeLimit.isEmpty() || !StringUtils.isNumeric(timeLimit) ) {
@@ -501,8 +595,8 @@ public class AdministrationController {
 		if ( memoryLimit.isEmpty() || !StringUtils.isNumeric(memoryLimit) ) {
 			memoryLimit = "-1";
 		}
-		Map<String, Object> result = problemService.createProblem(problemName, Integer.parseInt(timeLimit), 
-				Integer.parseInt(memoryLimit), description, hint, inputFormat, outputFormat, inputSample, 
+		Map<String, Object> result = problemService.createProblem(problemName, Integer.parseInt(timeLimit),
+				Integer.parseInt(memoryLimit), description, hint, inputFormat, outputFormat, inputSample,
 				outputSample, testCases, problemCategories, problemTags, isPublic, isExactlyMatch);
 		if ( (boolean) result.get("isSuccessful") ) {
 			long problemId = (Long) result.get("problemId");
@@ -511,7 +605,7 @@ public class AdministrationController {
 			LOGGER.info(String.format("Problem: [ProblemId=%s] was created by administrator at %s.",
 					new Object[] {problemId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -520,8 +614,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题创建结果的 Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户导入试题的请求")
 	@RequestMapping(value="/importProblem", method=RequestMethod.POST)
-	public Map<String, Object> importProblemAction(
+	public ResponseData importProblemAction(
+			@ApiParam(value="导入的xml文件", name="problem_file")
 			@RequestParam(value="problem_file") MultipartFile file,
 			HttpServletRequest request) {
 		Map<String, Object> result=null;
@@ -549,7 +645,7 @@ public class AdministrationController {
 //				System.out.println("no file");
 			}
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -559,8 +655,9 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含提交列表页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载编辑试题页面")
 	@RequestMapping(value="/edit-problem/{problemId}", method=RequestMethod.GET)
-	public ModelAndView editProblemsView(
+	public ResponseData editProblemsView(
 			@PathVariable(value = "problemId") long problemId,
 			HttpServletRequest request, HttpServletResponse response) {
 		Problem problem = problemService.getProblem(problemId);
@@ -573,13 +670,20 @@ public class AdministrationController {
 		Map<ProblemCategory, List<ProblemCategory>> problemCategories = problemService.getProblemCategoriesWithHierarchy();
 		List<ProblemTag> problemTags = problemService.getProblemTagsUsingProblemId(problemId);
 		
-		ModelAndView view = new ModelAndView("administration/edit-problem");
-		view.addObject("problem", problem);
-		view.addObject("checkpoints", checkpoints);
-		view.addObject("problemCategories", problemCategories);
-		view.addObject("selectedProblemCategories", selectedProblemCategories);
-		view.addObject("problemTags", problemTags);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/edit-problem");
+//		view.addObject("problem", problem);
+//		view.addObject("checkpoints", checkpoints);
+//		view.addObject("problemCategories", problemCategories);
+//		view.addObject("selectedProblemCategories", selectedProblemCategories);
+//		view.addObject("problemTags", problemTags);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("problem", problem);
+		result.put("checkpoints", checkpoints);
+		result.put("problemCategories", problemCategories);
+		result.put("selectedProblemCategories", selectedProblemCategories);
+		result.put("problemTags", problemTags);
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -601,22 +705,38 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题编辑结果的 Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户编辑试题的请求", notes = "根据结果中的isSuccessful判断是否成功")
 	@RequestMapping(value="/editProblem.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> editProblemAction(
+	public @ResponseBody ResponseData editProblemAction(
+			@ApiParam(value="试题的唯一标识符", name="problemId")
 			@RequestParam(value="problemId") long problemId,
+			@ApiParam(value="试题名称", name="problemName")
 			@RequestParam(value="problemName") String problemName,
-			@RequestParam(value="timeLimit") String timeLimit, 
-			@RequestParam(value="memoryLimit") String memoryLimit, 
-			@RequestParam(value="description") String description, 
-			@RequestParam(value="hint") String hint, 
-			@RequestParam(value="inputFormat") String inputFormat, 
-			@RequestParam(value="outputFormat") String outputFormat, 
-			@RequestParam(value="inputSample") String inputSample, 
-			@RequestParam(value="outputSample") String outputSample, 
-			@RequestParam(value="testCases") String testCases, 
-			@RequestParam(value="problemCategories") String problemCategories, 
-			@RequestParam(value="problemTags") String problemTags, 
-			@RequestParam(value="isPublic") boolean isPublic, 
+			@ApiParam(value="时间限制", name="timeLimit")
+			@RequestParam(value="timeLimit") String timeLimit,
+			@ApiParam(value="内存限制", name="memoryLimit")
+			@RequestParam(value="memoryLimit") String memoryLimit,
+			@ApiParam(value="试题描述", name="description")
+			@RequestParam(value="description") String description,
+			@ApiParam(value="提示", name="hint")
+			@RequestParam(value="hint") String hint,
+			@ApiParam(value="输入格式", name="inputFormat")
+			@RequestParam(value="inputFormat") String inputFormat,
+			@ApiParam(value="输出格式", name="outputFormat")
+			@RequestParam(value="outputFormat") String outputFormat,
+			@ApiParam(value="样例输入", name="inputSample")
+			@RequestParam(value="inputSample") String inputSample,
+			@ApiParam(value="样例输出", name="outputSample")
+			@RequestParam(value="outputSample") String outputSample,
+			@ApiParam(value="测试点", name="testCases")
+			@RequestParam(value="testCases") String testCases,
+			@ApiParam(value="试题分类", name="problemCategories")
+			@RequestParam(value="problemCategories") String problemCategories,
+			@ApiParam(value="试题标签", name="problemTags")
+			@RequestParam(value="problemTags") String problemTags,
+			@ApiParam(value="是否公开", name="isPublic")
+			@RequestParam(value="isPublic") boolean isPublic,
+			@ApiParam(value="测试点是否精确匹配", name="isExactlyMatch")
 			@RequestParam(value="isExactlyMatch") boolean isExactlyMatch,
 			HttpServletRequest request) {
 		if ( timeLimit.isEmpty() || !StringUtils.isNumeric(timeLimit) ) {
@@ -635,7 +755,7 @@ public class AdministrationController {
 			LOGGER.info(String.format("Problem: [ProblemId=%s] was edited by administrator at %s.", 
 					new Object[] {problemId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -644,14 +764,17 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含试题分类页面信息的ModelAndView对象.
 	 */
+	@ApiOperation(value = "加载试题分类页面")
 	@RequestMapping(value="/problem-categories", method=RequestMethod.GET)
-	public ModelAndView problemCategoriesView(
+	public ResponseData problemCategoriesView(
 			HttpServletRequest request, HttpServletResponse response) {
 		List<ProblemCategory> problemCategories = problemService.getProblemCategories();
 		
-		ModelAndView view = new ModelAndView("administration/problem-categories");
-		view.addObject("problemCategories", problemCategories);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/problem-categories");
+//		view.addObject("problemCategories", problemCategories);
+		Map<String, Object> result = new HashMap<>();
+		result.put("problemCategories", problemCategories);
+		return ResponseData.ok().data("result", result);
 	}
 	
 	/**
@@ -662,10 +785,14 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题分类的创建结果的Map<String, Object>对象
 	 */
+	@ApiOperation(value = "创建试题分类")
 	@RequestMapping(value="/createProblemCategory.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> createProblemCategoryAction(
+	public @ResponseBody ResponseData createProblemCategoryAction(
+			@ApiParam(value="试题分类别名", name="problemCategorySlug")
 			@RequestParam(value="problemCategorySlug") String problemCategorySlug,
+			@ApiParam(value="试题分类名称", name="problemCategoryName")
 			@RequestParam(value="problemCategoryName") String problemCategoryName,
+			@ApiParam(value="父级试题分类别名", name="parentProblemCategory")
 			@RequestParam(value="parentProblemCategory") String parentProblemCategorySlug,
 			HttpServletRequest request) {
 		Map<String, Object> result = problemService.createProblemCategory(
@@ -678,7 +805,7 @@ public class AdministrationController {
 			LOGGER.info(String.format("ProblemCategory: [ProblemCategoryId=%s] was created by administrator at %s.", 
 					new Object[] {problemCategoryId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -690,11 +817,16 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题分类的编辑结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "编辑试题分类", notes = "根据结果中的isSuccessful判断是否成功")
 	@RequestMapping(value="/editProblemCategory.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> editProblemCategoryAction(
+	public @ResponseBody ResponseData editProblemCategoryAction(
+			@ApiParam(value="试题分类的唯一标识符", name="problemCategoryId")
 			@RequestParam(value="problemCategoryId") String problemCategoryId,
+			@ApiParam(value="试题分类的别名", name="problemCategorySlug")
 			@RequestParam(value="problemCategorySlug") String problemCategorySlug,
+			@ApiParam(value="试题分类的名称", name="problemCategoryName")
 			@RequestParam(value="problemCategoryName") String problemCategoryName,
+			@ApiParam(value="父级试题分类的别名", name="parentProblemCategory")
 			@RequestParam(value="parentProblemCategory") String parentProblemCategorySlug,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = problemService.editProblemCategory(
@@ -707,7 +839,7 @@ public class AdministrationController {
 			LOGGER.info(String.format("ProblemCategory: [ProblemCategoryId=%s] was edited by administrator at %s.",
 					new Object[] {problemCategoryId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -716,8 +848,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 包含试题分类的删除结果的Map<String, Boolean>对象
 	 */
+	@ApiOperation(value = "删除试题分类")
 	@RequestMapping(value="/deleteProblemCategories.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> deleteProblemCategoryAction(
+	public @ResponseBody ResponseData deleteProblemCategoryAction(
+			@ApiParam(value="试题分类的唯一标识符集合", name="problemCategories")
 			@RequestParam(value="problemCategories") String problemCategories,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -734,7 +868,7 @@ public class AdministrationController {
 		}
 		result.put("isSuccessful", true);
 		result.put("deletedProblemCategories", deletedProblemCategories);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -746,10 +880,14 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含提交列表页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载提交列表页面")
 	@RequestMapping(value="/all-submissions", method=RequestMethod.GET)
-	public ModelAndView allSubmissionsView(
+	public ResponseData allSubmissionsView(
+			@ApiParam(value="提交对应试题的唯一标识符", name="problemId", required=false, defaultValue="0")
 			@RequestParam(value="problemId", required=false, defaultValue="0") long problemId,
+			@ApiParam(value="提交者的用户名", name="username", required=false, defaultValue="")
 			@RequestParam(value="username", required=false, defaultValue="") String username,
+			@ApiParam(value="当前页面的页码", name="page", required=false, defaultValue="1")
 			@RequestParam(value="page", required=false, defaultValue="1") long pageNumber,
 			HttpServletRequest request, HttpServletResponse response) {
 		final int NUMBER_OF_SUBMISSIONS_PER_PAGE = 100;
@@ -759,13 +897,20 @@ public class AdministrationController {
 		long offset = latestSubmissionId - (pageNumber >= 1 ? pageNumber - 1 : 0) * NUMBER_OF_SUBMISSIONS_PER_PAGE;
 		List<Submission> submissions = submissionService.getSubmissions(problemId, username, offset, NUMBER_OF_SUBMISSIONS_PER_PAGE);
 		
-		ModelAndView view = new ModelAndView("administration/all-submissions");
-		view.addObject("problemId", problemId);
-		view.addObject("username", username);
-		view.addObject("currentPage", pageNumber);
-		view.addObject("totalPages", (long) Math.ceil(totalSubmissions * 1.0 / NUMBER_OF_SUBMISSIONS_PER_PAGE));
-		view.addObject("submissions", submissions);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/all-submissions");
+//		view.addObject("problemId", problemId);
+//		view.addObject("username", username);
+//		view.addObject("currentPage", pageNumber);
+//		view.addObject("totalPages", (long) Math.ceil(totalSubmissions * 1.0 / NUMBER_OF_SUBMISSIONS_PER_PAGE));
+//		view.addObject("submissions", submissions);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("problemId", problemId);
+		result.put("username", username);
+		result.put("currentPage", pageNumber);
+		result.put("totalPages", (long) Math.ceil(totalSubmissions * 1.0 / NUMBER_OF_SUBMISSIONS_PER_PAGE));
+		result.put("submissions", submissions);
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -774,8 +919,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 提交记录的删除结果
 	 */
+	@ApiOperation(value = "删除选定的提交记录")
 	@RequestMapping(value="/deleteSubmissions.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> deleteSubmissionsAction(
+	public @ResponseBody ResponseData deleteSubmissionsAction(
+			@ApiParam(value="提交记录ID的集合, 以逗号(, )分隔", name="submissions")
 			@RequestParam(value="submissions") String submissions,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -792,7 +939,7 @@ public class AdministrationController {
 		}
 		result.put("isSuccessful", true);
 		result.put("deletedSubmissions", deletedSubmissions);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -801,8 +948,9 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 重新评测请求的执行结果
 	 */
+	@ApiOperation(value = "重新评测选定的提交记录")
 	@RequestMapping(value="/restartSubmissions.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> restartSubmissionsAction(
+	public @ResponseBody ResponseData restartSubmissionsAction(
 			@RequestParam(value="submissions") String submissions,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = new HashMap<>(2, 1);
@@ -812,7 +960,7 @@ public class AdministrationController {
 			submissionService.createSubmissionTask(submissionId);
 		}
 		result.put("isSuccessful", true);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -822,18 +970,22 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含提交记录信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "查看提交记录")
 	@RequestMapping(value="/edit-submission/{submissionId}", method=RequestMethod.GET)
-	public ModelAndView editSubmissionView(
+	public ResponseData editSubmissionView(
 			@PathVariable(value = "submissionId") long submissionId,
 			HttpServletRequest request, HttpServletResponse response) {
 		Submission submission = submissionService.getSubmission(submissionId);
 		if ( submission == null ) {
 			throw new ResourceNotFoundException();
 		}
-		ModelAndView view = new ModelAndView("administration/edit-submission");
-		view.addObject("submission", submission);
-		view.addObject("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
-		return view;
+//		ModelAndView view = new ModelAndView("administration/edit-submission");
+//		view.addObject("submission", submission);
+//		view.addObject("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
+		Map<String, Object> result = new HashMap<>();
+		result.put("submission", submission);
+		result.put("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -842,21 +994,31 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含参赛人数列表页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载竞赛列表页面")
 	@RequestMapping(value="/all-contests", method=RequestMethod.GET)
-	public ModelAndView allContestsView(
+	public ResponseData allContestsView(
+			@ApiParam(value="关键字", name="keyword", required=false, defaultValue="")
 			@RequestParam(value="keyword", required=false, defaultValue="") String keyword,
+			@ApiParam(value="当前页面的页码", name="page", required=false, defaultValue="1")
 			@RequestParam(value="page", required=false, defaultValue="1") long pageNumber,
 			HttpServletRequest request, HttpServletResponse response) {
 		final int NUMBER_OF_CONTESTS_PER_PAGE = 10;
 		long totalContests = contestService.getNumberOfContests(keyword);
 		List<Contest> contests = contestService.getContests(keyword, 0, (int) totalContests);
-		ModelAndView view = new ModelAndView("administration/all-contests");
-		view.addObject("currentTime", new Date());
-		view.addObject("keyword", keyword);
-		view.addObject("currentPage", pageNumber);
-		view.addObject("totalPages", (long) Math.ceil(totalContests * 1.0 / NUMBER_OF_CONTESTS_PER_PAGE));
-		view.addObject("contests", contests);
-		return view;
+//		ModelAndView view = new ModelAndView("administration/all-contests");
+//		view.addObject("currentTime", new Date());
+//		view.addObject("keyword", keyword);
+//		view.addObject("currentPage", pageNumber);
+//		view.addObject("totalPages", (long) Math.ceil(totalContests * 1.0 / NUMBER_OF_CONTESTS_PER_PAGE));
+//		view.addObject("contests", contests);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("currentTime", new Date());
+		result.put("keyword", keyword);
+		result.put("currentPage", pageNumber);
+		result.put("totalPages", (long) Math.ceil(totalContests * 1.0 / NUMBER_OF_CONTESTS_PER_PAGE));
+		result.put("contests", contests);
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -865,8 +1027,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 试题的删除结果
 	 */
+	@ApiOperation(value = "删除选定的竞赛")
 	@RequestMapping(value="/deleteContests.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> deleteContestsAction(
+	public @ResponseBody ResponseData deleteContestsAction(
+			@ApiParam(value="试题ID的集合, 以逗号(, )分隔", name="contests")
 			@RequestParam(value="contests") String contests,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = new HashMap<>(2, 1);
@@ -880,7 +1044,7 @@ public class AdministrationController {
 					new Object[] {contestId, ipAddress}));
 		}
 		result.put("isSuccessful", true);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -889,6 +1053,7 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含创建竞赛页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "")
 	@RequestMapping(value="/new-contest", method=RequestMethod.GET)
 	public ModelAndView newContestView(
 			HttpServletRequest request, HttpServletResponse response) {
@@ -932,25 +1097,28 @@ public class AdministrationController {
 	 * @return 包含常规选项页面信息的ModelAndView对象
 	 */
 	@RequestMapping(value="/general-settings", method=RequestMethod.GET)
-	public ModelAndView generalSettingsView(
+	public ResponseData generalSettingsView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("administration/general-settings");
-		view.addObject("options", getOptions());
-		return view;
+//		ModelAndView view = new ModelAndView("administration/general-settings");
+//		view.addObject("options", getOptions());
+		Map<String, Object> result = new HashMap<>();
+		result.put("options", getOptions());
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
 	 * 获取系统全部的选项, 以键值对的形式返回.
 	 * @return 键值对形式的系统选项
 	 */
-	private Map<String, String> getOptions() {
+	@ApiOperation(value = "获取系统全部的选项, 以键值对的形式返回")
+	private ResponseData getOptions() {
 		Map<String, String> optionMap = new HashMap<>();
 		List<Option> options = optionService.getOptions();
 		
 		for ( Option option : options ) {
 			optionMap.put(option.getOptionName(), option.getOptionValue());
 		}
-		return optionMap;
+		return ResponseData.ok().data("optionMap",optionMap);
 	}
 	
 	/**
@@ -966,20 +1134,29 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 网站常规选项的更新结果
 	 */
+	@ApiOperation(value = "更新网站常规选项")
 	@RequestMapping(value="/updateGeneralSettings.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> updateGeneralSettingsAction(
+	public @ResponseBody ResponseData updateGeneralSettingsAction(
+			@ApiParam(value="网站名称", name="websiteName")
 			@RequestParam(value="websiteName") String websiteName,
+			@ApiParam(value="网站描述", name="websiteDescription")
 			@RequestParam(value="websiteDescription") String websiteDescription,
+			@ApiParam(value="网站版权信息", name="copyright")
 			@RequestParam(value="copyright") String copyright,
+			@ApiParam(value="是否允许用户注册", name="allowUserRegister")
 			@RequestParam(value="allowUserRegister") boolean allowUserRegister,
+			@ApiParam(value="网站备案号", name="icpNumber")
 			@RequestParam(value="icpNumber") String icpNumber,
+			@ApiParam(value="公安备案号", name="policeIcpNumber")
 			@RequestParam(value="policeIcpNumber") String policeIcpNumber,
+			@ApiParam(value="Google Analytics代码", name="googleAnalyticsCode")
 			@RequestParam(value="googleAnalyticsCode") String googleAnalyticsCode,
+			@ApiParam(value="敏感词列表", name="offensiveWords")
 			@RequestParam(value="offensiveWords") String offensiveWords,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = optionService.updateOptions(websiteName, websiteDescription, 
 				copyright, allowUserRegister, icpNumber, policeIcpNumber, googleAnalyticsCode, offensiveWords);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -988,12 +1165,15 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含编程语言设置信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载编程语言设置页面")
 	@RequestMapping(value="/language-settings", method=RequestMethod.GET)
-	public ModelAndView languageSettingsView(
+	public ResponseData languageSettingsView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("administration/language-settings");
-		view.addObject("languages", languageService.getAllLanguages());
-		return view;
+//		ModelAndView view = new ModelAndView("administration/language-settings");
+//		view.addObject("languages", languageService.getAllLanguages());
+		Map<String, Object> result = new HashMap<>();
+		result.put("languages", languageService.getAllLanguages());
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -1002,13 +1182,15 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 编程语言选项的更新结果
 	 */
+	@ApiOperation(value = "更新网站编程语言选项")
 	@RequestMapping(value="/updateLanguageSettings.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> updateLanguageSettingsAction(
+	public @ResponseBody ResponseData updateLanguageSettingsAction(
+			@ApiParam(value="包含编程语言设置的数组", name="languages")
 			@RequestParam(value="languages") String languages,
 			HttpServletRequest request) {
 		List<Language> languagesList = JSON.parseArray(languages, Language.class);
 		Map<String, Object> result = languageService.updateLanguageSettings(languagesList);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**

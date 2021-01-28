@@ -92,7 +92,8 @@ public class AccountsController {
 	@ApiOperation(value = "用户登录信息查询",notes = "msg为log表示需要登录，为logged表示已登录(直接跳转)")
 	@RequestMapping(value="/login", method=RequestMethod.POST)
 	public ResponseData loginView(
-			@ApiParam(name = "是否登出", value="logout", defaultValue="false") boolean isLogout,
+			@ApiParam(value = "是否登出", name="logout", defaultValue="false")
+			@RequestParam(value="logout", defaultValue="false") boolean isLogout,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
 		if ( isLogout ) {
@@ -143,9 +144,12 @@ public class AccountsController {
 	@ApiOperation(value = "处理用户的登录请求",notes = "")
 	@RequestMapping(value="/login.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData loginAction(
-			@ApiParam(name="username", value = "用户名") String username,
-			@ApiParam(name="password", value = "密码") String password,
-			@ApiParam(name="rememberMe", value = "记住我") boolean isAutoLoginAllowed,
+			@ApiParam(name="username", value = "用户名")
+			@RequestParam(value="username") String username,
+			@ApiParam(name="password", value = "密码")
+			@RequestParam(value="password") String password,
+			@ApiParam(name="rememberMe", value = "记住我")
+			@RequestParam(value="rememberMe") boolean isAutoLoginAllowed,
 			HttpServletRequest request) {
 		System.out.println("username = " + username);
 		System.out.println("password = " + password);
@@ -222,13 +226,20 @@ public class AccountsController {
 	@ApiOperation(value = "处理用户注册的请求", notes = "返回注册成功之后的相关信息")
 	@RequestMapping(value="/register.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData registerAction(
-			@ApiParam(name="username", value = "用户名") String username,
-			@ApiParam(name="password", value = "密码") String password,
-			@ApiParam(name="email", value = "邮箱") String email,
-			@ApiParam(name="trueName", value = "真实姓名") String trueName,
-			@ApiParam(name="stuId", value = "学号") String stuId,
-			@ApiParam(name="languagePreference", value = "语言偏好") String languageSlug,
-			@ApiParam(name="csrfToken", value = "csrfToken") String csrfToken,
+			@ApiParam(name="username", value = "用户名")
+			@RequestParam(value="username") String username,
+			@ApiParam(name="password", value = "密码")
+			@RequestParam(value="password") String password,
+			@ApiParam(name="email", value = "邮箱")
+			@RequestParam(value="email") String email,
+			@ApiParam(name="trueName", value = "真实姓名")
+			@RequestParam(value="trueName") String trueName,
+			@ApiParam(name="stuId", value = "学号")
+			@RequestParam(value="stuId") String stuId,
+			@ApiParam(name="languagePreference", value = "语言偏好")
+			@RequestParam(value="languagePreference") String languageSlug,
+			@ApiParam(name="csrfToken", value = "csrfToken")
+			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		boolean isAllowRegister = optionService.getOption("allowUserRegister").getOptionValue().equals("1");
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
@@ -259,8 +270,10 @@ public class AccountsController {
 	@ApiOperation(value = "加载重置密码页面", notes = "判断是否满足重置密码以及返回重置密码的相关信息")
 	@RequestMapping(value="/reset-password", method=RequestMethod.POST)
 	public ResponseData resetPasswordView(
-			@ApiParam(value = "邮箱",name="email", required = false) String email,
-			@ApiParam(value = "token",name="token", required = false) String token,
+			@ApiParam(value = "邮箱",name="email", required = false)
+			@RequestParam(value="email",required = false) String email,
+			@ApiParam(value = "token",name="token", required = false)
+			@RequestParam(value="token",required = false) String token,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
 //		ModelAndView view = null;
@@ -303,9 +316,12 @@ public class AccountsController {
 	@ApiOperation(value = "发送重置密码的电子邮件")
 	@RequestMapping(value="/forgotPassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData forgotPasswordAction(
-			@ApiParam(value = "用户名", name="username") String username,
-			@ApiParam(value = "邮箱", name="email") String email,
-			@ApiParam(value = "csrfToken", name="csrfToken") String csrfToken,
+			@ApiParam(value = "用户名", name="username")
+			@RequestParam(value="username") String username,
+			@ApiParam(value = "邮箱", name="email")
+			@RequestParam(value="email") String email,
+			@ApiParam(value = "csrfToken", name="csrfToken")
+			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
@@ -331,11 +347,16 @@ public class AccountsController {
 	@ApiOperation(value = "重置用户密码")
 	@RequestMapping(value="/resetPassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData resetPasswordAction(
-			@ApiParam(value = "邮箱", name="email") String email,
-			@ApiParam(value = "token", name="token") String token,
-			@ApiParam(value = "新密码", name="newPassword") String newPassword,
-			@ApiParam(value = "确认密码", name="confirmPassword") String confirmPassword,
-			@ApiParam(value = "csrfToken", name="csrfToken") String csrfToken,
+			@ApiParam(value = "邮箱", name="email")
+			@RequestParam(value="email") String email,
+			@ApiParam(value = "token", name="token")
+			@RequestParam(value="token") String token,
+			@ApiParam(value = "新密码", name="newPassword")
+			@RequestParam(value="newPassword") String newPassword,
+			@ApiParam(value = "确认密码", name="confirmPassword")
+			@RequestParam(value="confirmPassword") String confirmPassword,
+			@ApiParam(value = "csrfToken", name="csrfToken")
+			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
 		boolean isCsrfTokenValid = CsrfProtector.isCsrfTokenValid(csrfToken, request.getSession());
@@ -458,9 +479,12 @@ public class AccountsController {
 	@ApiOperation(value = "处理用户修改密码的请求")
 	@RequestMapping(value="/changePassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData changePasswordInDashboardAction(
-			@ApiParam(value = "旧密码", name="oldPassword") String oldPassword,
-			@ApiParam(value = "新密码", name="newPassword") String newPassword,
-			@ApiParam(value = "确认密码", name="confirmPassword") String confirmPassword,
+			@ApiParam(value = "旧密码", name="oldPassword")
+			@RequestParam(value="oldPassword") String oldPassword,
+			@ApiParam(value = "新密码", name="newPassword")
+			@RequestParam(value="newPassword") String newPassword,
+			@ApiParam(value = "确认密码", name="confirmPassword")
+			@RequestParam(value="confirmPassword") String confirmPassword,
 			HttpServletRequest request) {
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
@@ -485,11 +509,16 @@ public class AccountsController {
 	@ApiParam(value = "处理用户更改个人资料的请求")
 	@RequestMapping(value="/updateProfile.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData updateProfileInDashboardAction(
-			@ApiParam(value = "邮箱", name="email") String email,
-			@ApiParam(value = "地址", name="location") String location,
-			@ApiParam(value = "主页", name="website") String website,
-			@ApiParam(value = "社交网络信息", name="socialLinks") String socialLinks,
-			@ApiParam(value = "个人简介", name="aboutMe") String aboutMe,
+			@ApiParam(value = "邮箱", name="email")
+			@RequestParam(value="email") String email,
+			@ApiParam(value = "地址", name="location")
+			@RequestParam(value="location") String location,
+			@ApiParam(value = "主页", name="website")
+			@RequestParam(value="website") String website,
+			@ApiParam(value = "社交网络信息", name="socialLinks")
+			@RequestParam(value="socialLinks") String socialLinks,
+			@ApiParam(value = "个人简介", name="aboutMe")
+			@RequestParam(value="aboutMe") String aboutMe,
 			HttpServletRequest request) {
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());
 		String ipAddress = HttpRequestParser.getRemoteAddr(request);
@@ -512,8 +541,10 @@ public class AccountsController {
 	@RequestMapping(value = "/changeAvatar", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseData changeAvatar(
-			@ApiParam(value = "头像文件", name="avatar_file") MultipartFile file,
-			@ApiParam(value = "用户编号", name="userId") long userId,
+			@ApiParam(value = "头像文件", name="avatar_file")
+			@RequestParam(value="avatar_file") MultipartFile file,
+			@ApiParam(value = "用户编号", name="userId")
+			@RequestParam(value="userId") long userId,
 			HttpServletRequest request) {
 		LOGGER.debug("get in the changeAvatar");
 		User currentUser = HttpSessionParser.getCurrentUser(request.getSession());

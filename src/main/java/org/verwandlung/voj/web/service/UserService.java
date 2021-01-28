@@ -279,8 +279,6 @@ public class UserService {
 								!result.get("isStuIdEmpty")  && result.get("isStuIdLegal")		&&
 								result.get("isUserGroupLegal") &&  result.get("isLanguageLegal")  &&  
 								result.get("isCsrfTokenValid") &&  result.get("isAllowRegister");
-		System.out.println("isTrueNameEmpty = dddd  "+result.get("isTrueNameEmpty"));
-		System.out.println("isSuccessful = dddd  " + isSuccessful);
 		result.put("isSuccessful", isSuccessful);
 		return result;
 	}
