@@ -47,6 +47,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.deser.impl.ManagedReferenceProperty;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,11 +67,13 @@ import org.verwandlung.voj.web.service.SubmissionService;
 import org.verwandlung.voj.web.service.UserService;
 import org.verwandlung.voj.web.util.CsrfProtector;
 import org.verwandlung.voj.web.util.HttpSessionParser;
+import org.verwandlung.voj.web.util.ResponseData;
 
 /**
  * 加载/显示评测的相关信息.
  *
  */
+@Api(tags = "加载/显示评测的相关信息")
 @RestController
 @RequestMapping(value="/submission")
 public class SubmissionController {
@@ -79,15 +85,21 @@ public class SubmissionController {
 	 * @param response - HttpResponse对象
 	 * @return 包含提交列表的ModelAndView对象 
 	 */
+	@ApiOperation(value = "\t * 显示评测列表的页面.\n")
 	@RequestMapping(value="", method=RequestMethod.GET)
-	public ModelAndView submissionsView(
+	public ResponseData submissionsView(
+			@ApiParam(value="试题的唯一标识符", name="problemId")
 			@RequestParam(value="problemId", required=false, defaultValue="0") long problemId,
+			@ApiParam(value="用户的用户名", name="username")
 			@RequestParam(value="username", required=false, defaultValue="") String username,
 			HttpServletRequest request, HttpServletResponse response) {
 		List<Submission> submissions = submissionService.getSubmissions(problemId, username, NUMBER_OF_SUBMISSION_PER_PAGE);
 		System.out.println(submissions.get(0).getSubmitTime());
-		return new ModelAndView("submissions/submissions")
-					.addObject("submissions", submissions);
+//		return new ModelAndView("submissions/submissions")
+//					.addObject("submissions", submissions);
+		Map<String, Object> result = new HashMap<>();
+		result.put("submissions", submissions);
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -98,10 +110,14 @@ public class SubmissionController {
 	 * @param request - HttpRequest对象
 	 * @return 一个包含提交记录列表的HashMap对象
 	 */
+	@ApiOperation(value = "获取历史评测信息的列表")
 	@RequestMapping(value="/getSubmissions.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getSubmissionsAction(
+	public @ResponseBody ResponseData getSubmissionsAction(
+			@ApiParam(value="试题的唯一标识符", name="problemId")
 			@RequestParam(value="problemId", required=false, defaultValue="0") long problemId,
+			@ApiParam(value="用户的用户名", name="username")
 			@RequestParam(value="username", required=false, defaultValue="") String username,
+			@ApiParam(value="当前加载的最后一条记录的提交唯一标识符", name="startIndex")
 			@RequestParam(value="startIndex") long startIndex,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -110,7 +126,7 @@ public class SubmissionController {
 		result.put("isSuccessful", submissions != null && !submissions.isEmpty());
 		result.put("submissions", submissions);
 		
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -121,10 +137,14 @@ public class SubmissionController {
 	 * @param request - HttpRequest对象
 	 * @return 一个包含提交记录列表的HashMap对象
 	 */
+	@ApiOperation(value = "获取最新的评测信息的列表")
 	@RequestMapping(value="/getLatestSubmissions.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getLatestSubmissionsAction(
+	public @ResponseBody ResponseData getLatestSubmissionsAction(
+			@ApiParam(value="试题的唯一标识符", name="problemId")
 			@RequestParam(value="problemId", required=false, defaultValue="0") long problemId,
+			@ApiParam(value="用户的用户名", name="username")
 			@RequestParam(value="username", required=false, defaultValue="") String username,
+			@ApiParam(value="当前加载的最新一条记录的提交唯一标识符", name="startIndex")
 			@RequestParam(value="startIndex") long startIndex,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -133,7 +153,7 @@ public class SubmissionController {
 		result.put("isSuccessful", submissions != null && !submissions.isEmpty());
 		result.put("submissions", submissions);
 		
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -143,18 +163,21 @@ public class SubmissionController {
 	 * @param response - HttpResponse对象
 	 * @return 包含提交详细信息的ModelAndView对象 
 	 */
+	@ApiOperation(value = "显示提交记录详细信息的页面")
 	@RequestMapping(value="/{submissionId}", method=RequestMethod.GET)
-	public ModelAndView submissionView(
+	public ResponseData submissionView(
+			@ApiParam(value="提交记录的唯一标识符",name="submissionId")
 			@PathVariable("submissionId") long submissionId,
 			HttpServletRequest request, HttpServletResponse response) {
 		Submission submission = submissionService.getSubmission(submissionId);
 		if ( submission == null ) {
 			throw new ResourceNotFoundException();
 		}
-		ModelAndView view = new ModelAndView("submissions/submission");
-		view.addObject("submission", submission);
-		view.addObject("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
-		return view;
+//		ModelAndView view = new ModelAndView("submissions/submission");
+		Map<String, Object> result = new HashMap<>();
+		result.put("submission", submission);
+		result.put("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -163,8 +186,9 @@ public class SubmissionController {
 	 * @return 包含评测结果信息的StreamingResponseBody对象
 	 * @throws IOException 
 	 */
+	@ApiOperation(value = "获取实时的评测结果")
 	@RequestMapping("/getRealTimeJudgeResult.action")
-	public SseEmitter getRealTimeJudgeResultAction(
+	public ResponseData getRealTimeJudgeResultAction(
 			@RequestParam(value="submissionId") long submissionId,
 			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request, HttpServletResponse response) throws IOException{
@@ -181,7 +205,9 @@ public class SubmissionController {
 		submissionEventListener.addSseEmitters(submissionId, sseEmitter);
 		sseEmitter.send("Established");
 		//这里的数据返回之后，就会通知前端进行更新
-		return sseEmitter;
+		Map<String, Object> result = new HashMap<>();
+		result.put("sseEmitter",sseEmitter);
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -190,8 +216,10 @@ public class SubmissionController {
 	 * @param request - HttpRequest对象
 	 * @return 包含提交记录详细信息的HashMap对象
 	 */
+	@ApiOperation(value = "获取提交记录的详细信息")
 	@RequestMapping(value="/getSubmission.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getSubmissionAction(
+	public @ResponseBody ResponseData getSubmissionAction(
+			@ApiParam(value="提交记录的唯一标识符", name="submissionId")
 			@RequestParam(value="submissionId") long submissionId,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -200,15 +228,23 @@ public class SubmissionController {
 		result.put("isSuccessful", submission != null);
 		result.put("submission", submission);
 		
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
+	/**
+	 * 提交正确率
+	 * @return
+	 */
+	@ApiOperation(value = "提交正确率")
 	@RequestMapping(value = "/submissionRank",method = RequestMethod.GET)
-	public ModelAndView getSubmissionRank(){
+	public ResponseData getSubmissionRank(){
 		List<User> submissionRanks = userService.getUserSubmissionInfoSortByRank();
-		System.out.println(submissionRanks.toString());
-		return new ModelAndView("submissions/leaderboard-submission")
-				.addObject("submissionRanks",submissionRanks);
+//		System.out.println(submissionRanks.toString());
+//		return new ModelAndView("submissions/leaderboard-submission")
+//				.addObject("submissionRanks",submissionRanks);
+		Map<String, Object> result = new HashMap<>();
+		result.put("submissionRanks",submissionRanks);
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
