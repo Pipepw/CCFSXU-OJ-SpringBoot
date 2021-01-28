@@ -42,6 +42,8 @@ package org.verwandlung.voj.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -53,11 +55,16 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.servlet.ModelAndView;
 
 import org.verwandlung.voj.web.exception.ResourceNotFoundException;
+import org.verwandlung.voj.web.util.ResponseData;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 异常处理的控制器.
  *
  */
+@Api(tags = "异常处理的控制器")
 @ControllerAdvice
 public class ExceptionHandlingController {
 	/**
@@ -66,12 +73,15 @@ public class ExceptionHandlingController {
 	 * @param response - HttpResponse对象
 	 * @return 返回一个包含异常信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "处理MissingServletRequestParameterException异常的方法")
 	@ResponseStatus(value=HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(MissingServletRequestParameterException.class)
-	public ModelAndView badRequestView(
+	public ResponseData badRequestView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("errors/404");
-		return view;
+//		ModelAndView view = new ModelAndView("errors/404");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg", "跳转到404");
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -80,12 +90,15 @@ public class ExceptionHandlingController {
 	 * @param response - HttpResponse对象
 	 * @return 返回一个包含异常信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "处理ResourceNotFoundException异常的方法")
 	@ResponseStatus(value=HttpStatus.NOT_FOUND)
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ModelAndView notFoundView(
+	public ResponseData notFoundView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("errors/404");
-		return view;
+//		ModelAndView view = new ModelAndView("errors/404");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg", "跳转到404");
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -94,12 +107,15 @@ public class ExceptionHandlingController {
 	 * @param response - HttpResponse对象
 	 * @return 返回一个包含异常信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "处理HttpRequestMethodNotSupportedException异常的方法")
 	@ResponseStatus(value=HttpStatus.METHOD_NOT_ALLOWED)
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-	public ModelAndView methodNotAllowedView(
+	public ResponseData methodNotAllowedView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("errors/404");
-		return view;
+//		ModelAndView view = new ModelAndView("errors/404");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg", "跳转到404");
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -109,14 +125,17 @@ public class ExceptionHandlingController {
 	 * @param response - HttpResponse对象
 	 * @return 返回一个包含异常信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "处理通用Exception异常的方法")
 	@ResponseStatus(value=HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(Exception.class)
-	public ModelAndView internalServerErrorView(
+	public ResponseData internalServerErrorView(
 			Exception ex, HttpServletRequest request, HttpServletResponse response) {
 		LOGGER.catching(ex);
 		
-		ModelAndView view = new ModelAndView("errors/500");
-		return view;
+//		ModelAndView view = new ModelAndView("errors/500");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg", "跳转到500");
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
