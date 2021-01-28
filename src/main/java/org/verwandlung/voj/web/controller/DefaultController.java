@@ -44,6 +44,9 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -53,11 +56,13 @@ import org.verwandlung.voj.web.messenger.ApplicationEventListener;
 import org.verwandlung.voj.web.model.*;
 import org.verwandlung.voj.web.service.*;
 import org.verwandlung.voj.web.util.LocaleUtils;
+import org.verwandlung.voj.web.util.ResponseData;
 
 /**
  * 处理应用程序公共的请求.
  *
  */
+@Api(tags = "处理应用程序公共的请求")
 @RestController
 @RequestMapping(value="/")
 public class DefaultController {
@@ -67,8 +72,9 @@ public class DefaultController {
 	 * @param response - HttpResponse对象
 	 * @return 一个包含首页内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示应用程序的首页")
 	@RequestMapping(value="/", method=RequestMethod.GET)
-	public ModelAndView indexView(
+	public ResponseData indexView(
 			HttpServletRequest request, HttpServletResponse response) {
 		List<Contest> contests = contestService.getContests(null, 0, NUMBER_OF_CONTESTS_PER_REQUEST);
 		List<DiscussionThread> discussionThreads = discussionService.getDiscussionThreadsOfTopic(
@@ -76,25 +82,33 @@ public class DefaultController {
 		List<BulletinBoardMessage> bulletinBoardMessages = bulletinBoardService.getBulletinBoardMessages(
 				0, NUMBER_OF_BULLETIN_MESSAGES_PER_REQUEST);
 
-		ModelAndView view = new ModelAndView("index");
-		view.addObject("currentTime", new Date());
-		view.addObject("contests", contests);
-		view.addObject("discussionThreads", discussionThreads);
-		view.addObject("bulletinBoardMessages", bulletinBoardMessages);
-		return view;
+//		ModelAndView view = new ModelAndView("index");
+//		view.addObject("currentTime", new Date());
+//		view.addObject("contests", contests);
+//		view.addObject("discussionThreads", discussionThreads);
+//		view.addObject("bulletinBoardMessages", bulletinBoardMessages);
+		Map<String, Object> result = new HashMap<>();
+		result.put("currentTime", new Date());
+		result.put("contests", contests);
+		result.put("discussionThreads", discussionThreads);
+		result.put("bulletinBoardMessages", bulletinBoardMessages);
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示使用条款页面.
 	 * @param request - HttpRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 一个包含使用条款页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示使用条款页面")
 	@RequestMapping(value="/terms", method=RequestMethod.GET)
-	public ModelAndView termsView(
+	public ResponseData termsView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/terms");
-		return view;
+//		ModelAndView view = new ModelAndView("misc/terms");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg","跳转到使用条款页面");
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -103,11 +117,14 @@ public class DefaultController {
 	 * @param response - HttpResponse对象
 	 * @return 一个包含隐私页内面容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示隐私页面")
 	@RequestMapping(value="/privacy", method=RequestMethod.GET)
-	public ModelAndView privacyView(
+	public ResponseData privacyView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/privacy");
-		return view;
+//		ModelAndView view = new ModelAndView("misc/privacy");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg","跳转到显示隐私页面");
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -116,32 +133,36 @@ public class DefaultController {
 	 * @param response - HttpResponse对象
 	 * @return 一个包含评测机信息页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示评测机信息页面")
 	@RequestMapping(value="/judgers", method=RequestMethod.GET)
-	public ModelAndView judgersView(
+	public ResponseData judgersView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/judgers");
-		view.addObject("languages", languageService.getAllLanguages());
-		return view;
+//		ModelAndView view = new ModelAndView("misc/judgers");
+		Map<String, Object> result = new HashMap<>();
+		result.put("languages", languageService.getAllLanguages());
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 获取评测机列表.
 	 * @param offset - 当前加载评测机的UID
 	 * @param request - HttpRequest对象
 	 * @return 一个包含评测机列表信息的List<Map<String, String>>对象
 	 */
+	@ApiOperation(value = "获取评测机列表")
 	@RequestMapping(value="/getJudgers.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getJudgersAction(
+	public @ResponseBody ResponseData getJudgersAction(
+			@ApiParam(value="当前加载评测机的UID", name="startIndex")
 			@RequestParam(value="startIndex", required=false, defaultValue="0") long offset,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>();
 		List<Map<String, String>> judgers = getJudgers(offset);
-		
+
 		result.put("isSuccessful", judgers != null && !judgers.isEmpty());
 		result.put("judgers", judgers);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 获取评测机的详细信息.
 	 * @param offset - 当前加载评测机的UID
@@ -151,58 +172,67 @@ public class DefaultController {
 		UserGroup userGroup = userService.getUserGroupUsingSlug("judgers");
 		List<User> judgersList = userService.getUserUsingUserGroup(userGroup, offset, NUMBER_OF_JUDGERS_PER_REQUEST);
 		List<Map<String, String>> judgers = new ArrayList<Map<String, String>>();
-		
+
 		for ( User judger : judgersList ) {
 			Map<String, String> judgerInformation = new HashMap<>(3, 1);
 			String username = judger.getUsername();
 			String description = keepAliveEventListener.getJudgerDescription(username);
-			
+
 			judgerInformation.put("username", username);
 			judgerInformation.put("description", description);
 			judgers.add(judgerInformation);
 		}
 		return judgers;
 	}
-	
+
 	/**
 	 * 显示帮助页面.
 	 * @param request - HttpRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 一个包含帮助页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示帮助页面")
 	@RequestMapping(value="/help", method=RequestMethod.GET)
-	public ModelAndView helpView(
+	public ResponseData helpView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/help");
-		return view;
+//		ModelAndView view = new ModelAndView("misc/help");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg","跳转到显示帮助页面");
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示关于页面.
 	 * @param request - HttpRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 一个包含关于页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示关于页面")
 	@RequestMapping(value="/about", method=RequestMethod.GET)
-	public ModelAndView aboutView(
+	public ResponseData aboutView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/about");
-		return view;
+//		ModelAndView view = new ModelAndView("misc/about");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg","跳转到显示关于页面");
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 	/**
 	 * 显示语言切换的页面.
 	 * @param request - HttpRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 一个包含语言切换页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示语言切换的页面")
 	@RequestMapping(value="/worldwide", method=RequestMethod.GET)
-	public ModelAndView worldwideView(
+	public ResponseData worldwideView(
+			@ApiParam(value="语言切换的页面", name="forward")
 			@RequestParam(value="forward", required=false, defaultValue="") String forwardUrl,
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("misc/worldwide");
-		view.addObject("forwardUrl", forwardUrl);
-		return view;
+//		ModelAndView view = new ModelAndView("misc/worldwide");
+		Map<String, Object> result = new HashMap<>();
+		result.put("forwardUrl", forwardUrl);
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -212,17 +242,19 @@ public class DefaultController {
 	 * @param response - HttpResponse对象
 	 * @return 语言切换操作结果的HashMap<String, Boolean>对象
 	 */
+	@ApiOperation(value = "处理用户切换语言的请求")
 	@RequestMapping(value="/worldwide.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Boolean> localizationAction(
+	public @ResponseBody ResponseData localizationAction(
+			@ApiParam(value="需要切换的语言代码", name="language")
 			@RequestParam(value="language") String language,
 			HttpServletRequest request, HttpServletResponse response) {
 		LocaleUtils.setLocale(request, response, language);
 
 		Map<String, Boolean> result = new HashMap<>(2, 1);
 		result.put("isSuccessful", true);
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
-	
+
 //	/**
 //	 * 对于所有未正常映射URL的页面, 显示页面未找到.
 //	 * @param request - HttpRequest对象
@@ -236,18 +268,21 @@ public class DefaultController {
 ////		return view;
 //		return "no this url";
 //	}
-	
+
 	/**
 	 * 显示升级浏览器页面.
 	 * @param request - HttpRequest对象
 	 * @param response - HttpResponse对象
 	 * @return 一个包含升级浏览器页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示升级浏览器页面")
 	@RequestMapping(value="/not-supported", method=RequestMethod.GET)
-	public ModelAndView notSupportedView(
+	public ResponseData notSupportedView(
 			HttpServletRequest request, HttpServletResponse response) {
-		ModelAndView view = new ModelAndView("errors/not-supported");
-		return view;
+//		ModelAndView view = new ModelAndView("errors/not-supported");
+		Map<String, Object> result = new HashMap<>();
+		result.put("msg","跳转显示升级浏览器页面");
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
