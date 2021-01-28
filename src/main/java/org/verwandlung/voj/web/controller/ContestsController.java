@@ -44,6 +44,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.alibaba.fastjson.JSON;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +62,7 @@ import org.verwandlung.voj.web.service.SubmissionService;
 import org.verwandlung.voj.web.util.CsrfProtector;
 import org.verwandlung.voj.web.util.HttpRequestParser;
 import org.verwandlung.voj.web.util.HttpSessionParser;
+import org.verwandlung.voj.web.util.ResponseData;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -69,6 +73,7 @@ import java.util.Map;
  * 处理竞赛的相关请求.
  *
  */
+@Api(tags = "处理竞赛的相关请求")
 @RestController
 @RequestMapping(value="/contest")
 public class ContestsController {
@@ -79,16 +84,21 @@ public class ContestsController {
 	 * @param response - HttpResponse对象
 	 * @return 一个包含竞赛列表页面内容的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示竞赛列表页面")
 	@RequestMapping(value="", method=RequestMethod.GET)
-	public ModelAndView contestsView(
+	public ResponseData contestsView(
+			@ApiParam(value="关键字", name="keyword", required = false)
 			@RequestParam(value="keyword", required = false) String keyword,
 			HttpServletRequest request, HttpServletResponse response) {
 		List<Contest> contests = contestService.getContests(keyword, 0, NUMBER_OF_CONTESTS_PER_PAGE);
 
-		ModelAndView view = new ModelAndView("contests/contests");
-		view.addObject("contests", contests);
-		view.addObject("currentTime", new Date());
-		return view;
+//		ModelAndView view = new ModelAndView("contests/contests");
+//		view.addObject("contests", contests);
+//		view.addObject("currentTime", new Date());
+		Map<String, Object> result = new HashMap<>();
+		result.put("contests", contests);
+		result.put("currentTime", new Date());
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -98,9 +108,12 @@ public class ContestsController {
 	 * @param request - HttpRequest对象
 	 * @return 一个包含竞赛列表的HashMap对象
 	 */
+	@ApiOperation(value = "获取竞赛的列表")
 	@RequestMapping(value="/getContests.action", method=RequestMethod.GET)
-	public @ResponseBody Map<String, Object> getContestsAction(
+	public @ResponseBody ResponseData getContestsAction(
+			@ApiParam(value="关键字",name="keyword")
 			@RequestParam(value="keyword", required=false) String keyword,
+			@ApiParam(value="当前加载的最后一条记录的索引值 (Index)",name="startIndex")
 			@RequestParam(value="startIndex") long startIndex,
 			HttpServletRequest request) {
 		Map<String, Object> result = new HashMap<>(3, 1);
@@ -109,7 +122,7 @@ public class ContestsController {
 		result.put("isSuccessful", contests != null && !contests.isEmpty());
 		result.put("contests", contests);
 
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 	
 	/**
@@ -119,8 +132,10 @@ public class ContestsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含提交详细信息的ModelAndView对象 
 	 */
+	@ApiOperation(value = "显示竞赛详细信息的页面")
 	@RequestMapping(value="/{contestId}", method=RequestMethod.GET)
-	public ModelAndView contestView(
+	public ResponseData contestView(
+			@ApiParam(value="竞赛的唯一标识符",name="contestId")
 			@PathVariable("contestId") long contestId,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
@@ -136,15 +151,23 @@ public class ContestsController {
 		List<Problem> problems = contestService.getProblemsOfContests(problemIdList);
 		Map<Long, ContestSubmission> submissions = contestService.getSubmissionsOfContestantOfContest(contestId, currentUser);
 
-		ModelAndView view = new ModelAndView("contests/contest");	//views/contest/contest.jsp
-		view.addObject("currentTime", new Date())
-			.addObject("contest", contest)
-			.addObject("problems", problems)
-			.addObject("submissions", submissions)
-			.addObject("isAttended", isAttended)
-			.addObject("numberOfContestants", numberOfContestants)
-			.addObject("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
-		return view;
+//		ModelAndView view = new ModelAndView("contests/contest");	//views/contest/contest.jsp
+//		view.addObject("currentTime", new Date())
+//			.addObject("contest", contest)
+//			.addObject("problems", problems)
+//			.addObject("submissions", submissions)
+//			.addObject("isAttended", isAttended)
+//			.addObject("numberOfContestants", numberOfContestants)
+//			.addObject("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));
+		Map<String, Object> result = new HashMap<>();
+		result.put("currentTime", new Date());
+		result.put("contest", contest);
+		result.put("problems", problems);
+		result.put("submissions", submissions);
+		result.put("isAttended", isAttended);
+		result.put("numberOfContestants", numberOfContestants);
+		result.put("csrfToken", CsrfProtector.getCsrfToken(request.getSession()));;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -155,9 +178,12 @@ public class ContestsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含是否成功参加竞赛状态信息的Map对象
 	 */
+	@ApiOperation(value = "处理用户参加竞赛的请求")
 	@RequestMapping(value="/{contestId}/attend.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Boolean> attendContestAction(
+	public @ResponseBody ResponseData attendContestAction(
+			@ApiParam(value="竞赛的唯一标识符",name="contestId")
 			@PathVariable("contestId") long contestId,
+			@ApiParam(value="用于防止CSRF攻击的Token", name="csrfToken")
 			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
@@ -170,7 +196,7 @@ public class ContestsController {
 			LOGGER.info(String.format("User: {%s} attended contest #%d at %s",
 					new Object[] {currentUser, contestId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -180,8 +206,10 @@ public class ContestsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含竞赛排行榜的ModelAndView对象
 	 */
-	@RequestMapping(value="/{contestId}/leaderboard", method=RequestMethod.GET)
-	public ModelAndView leaderboardView(
+	@ApiOperation(value = "显示排行榜")
+	@RequestMapping(value="/{contestId}/leader_board", method=RequestMethod.GET)
+	public ResponseData leaderBoardView(
+			@ApiParam(value="竞赛的唯一标识符",name="contestId")
 			@PathVariable("contestId") long contestId,
 			HttpServletRequest request, HttpServletResponse response) {
 		Contest contest = contestService.getContest(contestId);
@@ -194,24 +222,29 @@ public class ContestsController {
 		List<Long> problemIdList = JSON.parseArray(contest.getProblems(), Long.class);
 		List<Problem> problems = contestService.getProblemsOfContests(problemIdList);
 		ModelAndView view = null;
-		Map<String, Object> result = null;
+		Map<String, Object> ContestResult;
+		Map<String, Object> result = new HashMap<>();
 
 		if ( contest.getContestMode().equals("OI") ) {
-			view = new ModelAndView("contests/leaderboard-oi");
-			result = contestService.getLeaderBoardForOi(contestId);
+			result.put("ContestMode","OI");
+			ContestResult = contestService.getLeaderBoardForOi(contestId);
 		} else if ( contest.getContestMode().equals("ACM") ) {
-			view = new ModelAndView("contests/leaderboard-acm");
-			result = contestService.getLeaderBoardForAcm(contestId);
+			result.put("ContestMode","ACM");
+			ContestResult = contestService.getLeaderBoardForAcm(contestId);
 		} else {
 			throw new ResourceNotFoundException();
 		}
-		List<ContestContestant> contestants = (List<ContestContestant>) result.get("contestants");
-		Map<Long, Map<Long, Submission>> submissions = (Map<Long, Map<Long, Submission>>) result.get("submissions");
-		view.addObject("contestants", contestants);
-		view.addObject("submissions", submissions);
-		view.addObject("contest", contest);
-		view.addObject("problems", problems);
-		return view;
+		List<ContestContestant> contestants = (List<ContestContestant>) ContestResult.get("contestants");
+		Map<Long, Map<Long, Submission>> submissions = (Map<Long, Map<Long, Submission>>) ContestResult.get("submissions");
+//		view.addObject("contestants", contestants);
+//		view.addObject("submissions", submissions);
+//		view.addObject("contest", contest);
+//		view.addObject("problems", problems);
+		result.put("contestants", contestants);
+		result.put("submissions", submissions);
+		result.put("contest", contest);
+		result.put("problems", problems);
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -222,9 +255,12 @@ public class ContestsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含竞赛试题信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "显示竞赛中的试题信息")
 	@RequestMapping(value="/{contestId}/p/{problemId}", method=RequestMethod.GET)
-	public ModelAndView problemView(
+	public ResponseData problemView(
+			@ApiParam(value="竞赛的唯一标识符", name="contestId")
 			@PathVariable("contestId") long contestId,
+			@ApiParam(value="试题的唯一标识符", name="problemId")
 			@PathVariable("problemId") long problemId,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
@@ -249,16 +285,25 @@ public class ContestsController {
 		List<Language> languages = languageService.getAllLanguages();
 		Map<String, String> codeSnippet = contestService.getCodeSnippetOfContestProblem(contest, problemId, currentUser);
 		List<Submission> submissions = contestService.getSubmissionsOfContestantOfContestProblem(contest, problemId, currentUser);
-		ModelAndView view = new ModelAndView("problems/problem");
-		view.addObject("contest", contest);
-		view.addObject("problem", problem);
-		view.addObject("languages", languages);
-		view.addObject("codeSnippet", codeSnippet);
-		view.addObject("submissions", submissions);
-		view.addObject("currentTime", currentTime);
-		view.addObject("isContest", true);
-		view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
-		return view;
+//		ModelAndView view = new ModelAndView("problems/problem");
+//		view.addObject("contest", contest);
+//		view.addObject("problem", problem);
+//		view.addObject("languages", languages);
+//		view.addObject("codeSnippet", codeSnippet);
+//		view.addObject("submissions", submissions);
+//		view.addObject("currentTime", currentTime);
+//		view.addObject("isContest", true);
+//		view.addObject("csrfToken", CsrfProtector.getCsrfToken(session));
+		Map<String, Object> result = new HashMap<>();
+		result.put("contest", contest);
+		result.put("problem", problem);
+		result.put("languages", languages);
+		result.put("codeSnippet", codeSnippet);
+		result.put("submissions", submissions);
+		result.put("currentTime", currentTime);
+		result.put("isContest", true);
+		result.put("csrfToken", CsrfProtector.getCsrfToken(session));
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
@@ -270,11 +315,16 @@ public class ContestsController {
 	 * @param request - HttpRequest对象
 	 * @return 一个包含提交记录创建结果的Map<String, Object>对象
 	 */
+	@ApiOperation(value = "创建提交")
 	@RequestMapping(value="/{contestId}/createSubmission.action", method=RequestMethod.POST)
-	public @ResponseBody Map<String, Object> createSubmissionAction(
+	public @ResponseBody ResponseData createSubmissionAction(
+			@ApiParam(value = "试题的唯一标识符", name = "problemId")
 			@RequestParam(value = "problemId") long problemId,
+			@ApiParam(value = "编程语言的别名", name = "languageSlug")
 			@RequestParam(value = "languageSlug") String languageSlug,
+			@ApiParam(value = "代码", name = "code")
 			@RequestParam(value = "code") String code,
+			@ApiParam(value = "用于防止CSRF攻击的Token", name = "csrfToken")
 			@RequestParam(value = "csrfToken") String csrfToken,
 			HttpServletRequest request, @PathVariable String contestId) {
 		HttpSession session = request.getSession();
@@ -295,7 +345,7 @@ public class ContestsController {
 			LOGGER.info(String.format("User: {%s} submitted code with SubmissionId #%s at %s",
 					new Object[] {currentUser, submissionId, ipAddress}));
 		}
-		return result;
+		return ResponseData.ok().data("result",result);
 	}
 
 	/**
