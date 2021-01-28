@@ -85,7 +85,7 @@ public class SubmissionController {
 	 * @param response - HttpResponse对象
 	 * @return 包含提交列表的ModelAndView对象 
 	 */
-	@ApiOperation(value = "\t * 显示评测列表的页面.\n")
+	@ApiOperation(value = "显示评测列表的页面")
 	@RequestMapping(value="", method=RequestMethod.GET)
 	public ResponseData submissionsView(
 			@ApiParam(value="试题的唯一标识符", name="problemId")
@@ -187,7 +187,7 @@ public class SubmissionController {
 	 * @throws IOException 
 	 */
 	@ApiOperation(value = "获取实时的评测结果")
-	@RequestMapping("/getRealTimeJudgeResult.action")
+	@RequestMapping(value="/getRealTimeJudgeResult.action", method=RequestMethod.GET)
 	public ResponseData getRealTimeJudgeResultAction(
 			@RequestParam(value="submissionId") long submissionId,
 			@RequestParam(value="csrfToken") String csrfToken,
