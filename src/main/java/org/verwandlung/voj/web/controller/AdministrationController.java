@@ -86,7 +86,7 @@ public class AdministrationController {
 	 * @param response - HttpResponse对象
 	 * @return 包含系统管理页面信息的ModelAndView对象
 	 */
-	@ApiOperation(value = "加载系统管理首页")
+	@ApiOperation(value = "加载系统管理首页", notes = "先登陆管理员账号")
 	@RequestMapping(value="", method=RequestMethod.GET)
 	public ResponseData indexView(
 			HttpServletRequest request, HttpServletResponse response) {
@@ -212,6 +212,7 @@ public class AdministrationController {
 	@ApiOperation(value = "获取系统一段时间内的提交次数")
 	@RequestMapping(value="/getNumberOfSubmissions.action", method=RequestMethod.GET)
 	public @ResponseBody ResponseData getNumberOfSubmissionsAction(
+			@ApiParam(value = "时间间隔的天数", name = "period", example = "10")
 			@RequestParam(value="period") int period,
 			HttpServletRequest request) {
 		Map<String, Object> submissions = new HashMap<>(2, 1);
@@ -275,10 +276,10 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 提交记录的删除结果
 	 */
-	@ApiOperation(value = "删除选定的用户")
+	@ApiOperation(value = "删除选定的用户", notes = "建议新建用户之后测试")
 	@RequestMapping(value="/deleteUsers.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData deleteUsersAction(
-			@ApiParam(value = "选定的用户", name="users")
+			@ApiParam(value = "用户ID的集合, 以逗号(, )分隔", name="users")
 			@RequestParam(value="users") String users,
 			HttpServletRequest request) {
 		Map<String, Boolean> result = new HashMap<>(2, 1);
@@ -298,9 +299,10 @@ public class AdministrationController {
 	 * @param response - HttpServletResponse对象
 	 * @return 包含编辑用户信息的ModelAndView对象
 	 */
-	@ApiOperation(value = "加载编辑用户信息的页面")
+	@ApiOperation(value = "加载编辑用户信息的页面", notes = "建议新建用户后测试")
 	@RequestMapping(value="/edit-user/{userId}", method=RequestMethod.GET)
 	public ResponseData editUserView(
+			@ApiParam(value = "用户的唯一标识符", name = "userId")
 			@PathVariable(value = "userId") long userId,
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = userService.getUserUsingUid(userId);
@@ -339,7 +341,7 @@ public class AdministrationController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含个人资料修改结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "编辑用户个人信息")
+	@ApiOperation(value = "编辑用户个人信息", notes = "建议新建用户后测试")
 	@RequestMapping(value="/editUser.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData editUserAction(
 			@ApiParam(value="用户唯一标识符", name="uid")
@@ -414,19 +416,19 @@ public class AdministrationController {
 	@ApiOperation(value = "创建新用户", notes = "根据结果中的isSuccessful判断是否成功")
 	@RequestMapping(value="/newUser.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData newUserAction(
-			@ApiParam(value = "用户名", name="username")
+			@ApiParam(name="username", value = "用户名，超过6位，不重复，不能是数字开头", example = "a13223", required = true)
 			@RequestParam(value="username") String username,
-			@ApiParam(value = "密码", name="password")
+			@ApiParam(name="password", value = "密码", example = "12345678", required = true)
 			@RequestParam(value="password") String password,
-			@ApiParam(value = "用户邮箱", name="email")
+			@ApiParam(name="email", value = "邮箱", example = "1234@qq.com，这种，不重复就行", required = true)
 			@RequestParam(value="email") String email,
-			@ApiParam(value = "真实姓名", name="trueName")
+			@ApiParam(name="trueName", value = "真实姓名", example = "嘟嘟嘟", required = true)
 			@RequestParam(value="trueName") String trueName,
-			@ApiParam(value = "学号", name="stuId")
+			@ApiParam(name="stuId", value = "学号", example = "123456789123", required = true)
 			@RequestParam(value="stuId") String stuId,
-			@ApiParam(value = "用户分组", name="userGroup")
+			@ApiParam(value = "用户组的别名，从创建用户页面中获取信息", name="userGroup", example = "users", required = true)
 			@RequestParam(value="userGroup") String userGroupSlug,
-			@ApiParam(value = "偏好语言", name="preferLanguage")
+			@ApiParam(value = "偏好语言的别名，从创建用户页面中获取信息", name="preferLanguage", example = "text/x-csrc", required = true)
 			@RequestParam(value="preferLanguage") String preferLanguageSlug,
 			HttpServletRequest request) {
 		System.out.println("username = " + username);
@@ -1096,6 +1098,7 @@ public class AdministrationController {
 	 * @param response - HttpResponse对象
 	 * @return 包含常规选项页面信息的ModelAndView对象
 	 */
+	@ApiOperation(value = "加载常规选项页面")
 	@RequestMapping(value="/general-settings", method=RequestMethod.GET)
 	public ResponseData generalSettingsView(
 			HttpServletRequest request, HttpServletResponse response) {
