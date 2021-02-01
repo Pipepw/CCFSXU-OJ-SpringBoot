@@ -92,7 +92,7 @@ public class AccountsController {
 	@ApiOperation(value = "用户登录信息查询",notes = "msg为log表示需要登录，为logged表示已登录(直接跳转)")
 	@RequestMapping(value="/login", method=RequestMethod.POST)
 	public ResponseData loginView(
-			@ApiParam(value = "是否登出", name="logout", defaultValue="false")
+			@ApiParam(value = "是否登出", name="logout", defaultValue="false", example = "false")
 			@RequestParam(value="logout", defaultValue="false") boolean isLogout,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
@@ -144,11 +144,11 @@ public class AccountsController {
 	@ApiOperation(value = "处理用户的登录请求",notes = "")
 	@RequestMapping(value="/login.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData loginAction(
-			@ApiParam(name="username", value = "用户名")
+			@ApiParam(name="username", value = "用户名", example = "zjhzxhz", required = true)
 			@RequestParam(value="username") String username,
-			@ApiParam(name="password", value = "密码")
+			@ApiParam(name="password", value = "密码，使用md5进行加密", example = "785ee107c11dfe36de668b1ae7baacbb", required = true)
 			@RequestParam(value="password") String password,
-			@ApiParam(name="rememberMe", value = "记住我")
+			@ApiParam(name="rememberMe", value = "记住我", example = "true", required = true)
 			@RequestParam(value="rememberMe") boolean isAutoLoginAllowed,
 			HttpServletRequest request) {
 		System.out.println("username = " + username);
@@ -223,22 +223,22 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含账户创建结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "处理用户注册的请求", notes = "返回注册成功之后的相关信息")
+	@ApiOperation(value = "处理用户注册的请求", notes = "返回注册成功之后的相关信息，返回结果中，successful决定是否成功，各种Legal判断合法true，Empty判断是否为空")
 	@RequestMapping(value="/register.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData registerAction(
-			@ApiParam(name="username", value = "用户名")
+			@ApiParam(name="username", value = "用户名，超过6位，不重复，不能是数字开头", example = "a13223", required = true)
 			@RequestParam(value="username") String username,
-			@ApiParam(name="password", value = "密码")
+			@ApiParam(name="password", value = "密码", example = "12345678", required = true)
 			@RequestParam(value="password") String password,
-			@ApiParam(name="email", value = "邮箱")
+			@ApiParam(name="email", value = "邮箱", example = "1234@qq.com，这种，不重复就行", required = true)
 			@RequestParam(value="email") String email,
-			@ApiParam(name="trueName", value = "真实姓名")
+			@ApiParam(name="trueName", value = "真实姓名", example = "嘟嘟嘟", required = true)
 			@RequestParam(value="trueName") String trueName,
-			@ApiParam(name="stuId", value = "学号")
+			@ApiParam(name="stuId", value = "学号", example = "123456789123", required = true)
 			@RequestParam(value="stuId") String stuId,
-			@ApiParam(name="languagePreference", value = "语言偏好")
+			@ApiParam(name="languagePreference", value = "语言偏好，从用户注册信息中获取", example = "text/x-csrc", required = true)
 			@RequestParam(value="languagePreference") String languageSlug,
-			@ApiParam(name="csrfToken", value = "csrfToken")
+			@ApiParam(name="csrfToken", value = "csrfToken，从用户注册信息中获取", required = true)
 			@RequestParam(value="csrfToken") String csrfToken,
 			HttpServletRequest request) {
 		boolean isAllowRegister = optionService.getOption("allowUserRegister").getOptionValue().equals("1");
@@ -267,12 +267,12 @@ public class AccountsController {
 	 * @param response - HttpResponse对象
 	 * @return 包含密码重置页面信息的ModelAndView对象
 	 */
-	@ApiOperation(value = "加载重置密码页面", notes = "判断是否满足重置密码以及返回重置密码的相关信息")
+	@ApiOperation(value = "加载重置密码页面", notes = "判断是否满足重置密码以及返回重置密码的相关信息，建议先注册一个用户再测试")
 	@RequestMapping(value="/reset-password", method=RequestMethod.POST)
 	public ResponseData resetPasswordView(
-			@ApiParam(value = "邮箱",name="email", required = false)
+			@ApiParam(value = "邮箱",name="email", required = true)
 			@RequestParam(value="email",required = false) String email,
-			@ApiParam(value = "token",name="token", required = false)
+			@ApiParam(value = "token",name="token", required = true)
 			@RequestParam(value="token",required = false) String token,
 			HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
@@ -313,7 +313,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码重置邮件发送结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "发送重置密码的电子邮件")
+	@ApiOperation(value = "发送重置密码的电子邮件", notes = "建议先注册一个用户进行测试")
 	@RequestMapping(value="/forgotPassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData forgotPasswordAction(
 			@ApiParam(value = "用户名", name="username")
@@ -344,7 +344,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码重置结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "重置用户密码")
+	@ApiOperation(value = "重置用户密码", notes = "建议先注册一个用户进行测试")
 	@RequestMapping(value="/resetPassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData resetPasswordAction(
 			@ApiParam(value = "邮箱", name="email")
@@ -379,6 +379,7 @@ public class AccountsController {
 	@ApiOperation(value = "加载用户的个人信息")
 	@RequestMapping(value="/user/{userId}", method=RequestMethod.GET)
 	public ResponseData userView(
+			@ApiParam(value = "用户id，session中登录用户的id", name = "userId", example = "1000")
 			@PathVariable("userId") long userId,
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = userService.getUserUsingUid(userId);
@@ -412,7 +413,9 @@ public class AccountsController {
 	@ApiOperation(value = "获取某个用户一段时间内的提交次数")
 	@RequestMapping(value="/getNumberOfSubmissionsOfUsers.action", method=RequestMethod.GET)
 	public @ResponseBody ResponseData getNumberOfSubmissionsOfUsersAction(
+			@ApiParam(value = "用户的唯一标识符", name = "uid", example = "1002")
 			@RequestParam(value="uid", required=false, defaultValue="0") long userId,
+			@ApiParam(value = "时间间隔的天数", name = "period", example = "10")
 			@RequestParam(value="period") int period,
 			HttpServletRequest request) {
 		if ( userId == 0 ) {
@@ -476,7 +479,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含密码验证结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "处理用户修改密码的请求")
+	@ApiOperation(value = "处理用户修改密码的请求", notes = "建议注册一个用户进行测试")
 	@RequestMapping(value="/changePassword.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData changePasswordInDashboardAction(
 			@ApiParam(value = "旧密码", name="oldPassword")
@@ -506,7 +509,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return 一个包含个人资料修改结果的Map<String, Boolean>对象
 	 */
-	@ApiOperation(value = "处理用户更改个人资料的请求")
+	@ApiOperation(value = "处理用户更改个人资料的请求", notes = "建议注册一个用户进行测试")
 	@RequestMapping(value="/updateProfile.action", method=RequestMethod.POST)
 	public @ResponseBody ResponseData updateProfileInDashboardAction(
 			@ApiParam(value = "邮箱", name="email")
@@ -537,7 +540,7 @@ public class AccountsController {
 	 * @param request - HttpServletRequest对象
 	 * @return
 	 */
-	@ApiOperation(value = "处理用户修改头像的请求")
+	@ApiOperation(value = "处理用户修改头像的请求", notes = "建议注册一个用户进行测试")
 	@RequestMapping(value = "/changeAvatar", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseData changeAvatar(

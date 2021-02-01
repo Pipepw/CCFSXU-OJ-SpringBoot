@@ -73,7 +73,7 @@ import org.verwandlung.voj.web.util.ResponseData;
  * 处理用户的查看试题/提交评测等请求.
  *
  */
-@Api(tags = "提交评测等请求")
+@Api(tags = "处理用户的查看试题/提交评测等请求")
 @RestController
 @RequestMapping(value="/p")
 public class ProblemsController {

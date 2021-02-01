@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.2</version>
+        <version>2.3.0.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.vervandlung.voj</groupId>
@@ -21,6 +21,7 @@
 <!--        <mybatis.version>3.5.0</mybatis.version>-->
         <druid.version>1.1.15</druid.version>
 <!--        <activemq.version>5.15.2</activemq.version>-->
+        <skipTests>true</skipTests>
     </properties>
 
     <dependencies>

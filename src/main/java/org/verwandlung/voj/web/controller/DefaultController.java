@@ -66,34 +66,34 @@ import org.verwandlung.voj.web.util.ResponseData;
 @RestController
 @RequestMapping(value="/")
 public class DefaultController {
-	/**
-	 * 显示应用程序的首页.
-	 * @param request - HttpRequest对象
-	 * @param response - HttpResponse对象
-	 * @return 一个包含首页内容的ModelAndView对象
-	 */
-	@ApiOperation(value = "显示应用程序的首页")
-	@RequestMapping(value="/", method=RequestMethod.GET)
-	public ResponseData indexView(
-			HttpServletRequest request, HttpServletResponse response) {
-		List<Contest> contests = contestService.getContests(null, 0, NUMBER_OF_CONTESTS_PER_REQUEST);
-		List<DiscussionThread> discussionThreads = discussionService.getDiscussionThreadsOfTopic(
-				null, 0, NUMBER_OF_DISCUSSION_THREADS_PER_REQUEST);
-		List<BulletinBoardMessage> bulletinBoardMessages = bulletinBoardService.getBulletinBoardMessages(
-				0, NUMBER_OF_BULLETIN_MESSAGES_PER_REQUEST);
-
-//		ModelAndView view = new ModelAndView("index");
-//		view.addObject("currentTime", new Date());
-//		view.addObject("contests", contests);
-//		view.addObject("discussionThreads", discussionThreads);
-//		view.addObject("bulletinBoardMessages", bulletinBoardMessages);
-		Map<String, Object> result = new HashMap<>();
-		result.put("currentTime", new Date());
-		result.put("contests", contests);
-		result.put("discussionThreads", discussionThreads);
-		result.put("bulletinBoardMessages", bulletinBoardMessages);
-		return ResponseData.ok().data("result",result);
-	}
+//	/**
+//	 * 显示应用程序的首页.
+//	 * @param request - HttpRequest对象
+//	 * @param response - HttpResponse对象
+//	 * @return 一个包含首页内容的ModelAndView对象
+//	 */
+//	@ApiOperation(value = "显示应用程序的首页")
+//	@RequestMapping(value="/", method=RequestMethod.GET)
+//	public ResponseData indexView(
+//			HttpServletRequest request, HttpServletResponse response) {
+//		List<Contest> contests = contestService.getContests(null, 0, NUMBER_OF_CONTESTS_PER_REQUEST);
+//		List<DiscussionThread> discussionThreads = discussionService.getDiscussionThreadsOfTopic(
+//				null, 0, NUMBER_OF_DISCUSSION_THREADS_PER_REQUEST);
+//		List<BulletinBoardMessage> bulletinBoardMessages = bulletinBoardService.getBulletinBoardMessages(
+//				0, NUMBER_OF_BULLETIN_MESSAGES_PER_REQUEST);
+//
+////		ModelAndView view = new ModelAndView("index");
+////		view.addObject("currentTime", new Date());
+////		view.addObject("contests", contests);
+////		view.addObject("discussionThreads", discussionThreads);
+////		view.addObject("bulletinBoardMessages", bulletinBoardMessages);
+//		Map<String, Object> result = new HashMap<>();
+//		result.put("currentTime", new Date());
+//		result.put("contests", contests);
+//		result.put("discussionThreads", discussionThreads);
+//		result.put("bulletinBoardMessages", bulletinBoardMessages);
+//		return ResponseData.ok().data("result",result);
+//	}
 
 	/**
 	 * 显示使用条款页面.
